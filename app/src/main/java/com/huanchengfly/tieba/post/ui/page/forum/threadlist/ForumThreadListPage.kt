@@ -27,11 +27,14 @@ import androidx.compose.material.Text
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import com.huanchengfly.tieba.post.utils.appPreferences
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -65,6 +68,7 @@ import com.huanchengfly.tieba.post.ui.widgets.compose.LoadMoreLayout
 import com.huanchengfly.tieba.post.ui.widgets.compose.LocalSnackbarHostState
 import com.huanchengfly.tieba.post.ui.widgets.compose.MyLazyColumn
 import com.huanchengfly.tieba.post.ui.widgets.compose.VerticalDivider
+import com.huanchengfly.tieba.post.repository.ThreadDetailPrefetchManager
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 
@@ -327,6 +331,24 @@ fun ForumThreadListPage(
         prop1 = ForumThreadListUiState::threadList,
         initial = persistentListOf()
     )
+    LaunchedEffect(lazyListState, threadList) {
+        snapshotFlow {
+            val visible = lazyListState.layoutInfo.visibleItemsInfo
+            visible.lastOrNull()?.index ?: -1
+        }.collect { lastVisibleIndex ->
+            if (!context.appPreferences.enableThreadPrefetch) return@collect
+            if (lastVisibleIndex < 0 || threadList.isEmpty()) return@collect
+            val prefetchRange = (lastVisibleIndex + 1).coerceAtMost(threadList.size)
+                .until((lastVisibleIndex + 4).coerceAtMost(threadList.size))
+            for (i in prefetchRange) {
+                val item = threadList[i]
+                ThreadDetailPrefetchManager.prefetch(
+                    item.thread.get { threadId },
+                    item.thread.get { forumId }
+                )
+            }
+        }
+    }
     val threadListIds by viewModel.uiState.collectPartialAsState(
         prop1 = ForumThreadListUiState::threadListIds,
         initial = persistentListOf()

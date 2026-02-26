@@ -14,6 +14,7 @@ import androidx.compose.material.icons.outlined.ImageSearch
 import androidx.compose.material.icons.outlined.NightsStay
 import androidx.compose.material.icons.outlined.PhotoSizeSelectActual
 import androidx.compose.material.icons.outlined.SecurityUpdateWarning
+import androidx.compose.material.icons.outlined.RocketLaunch
 import androidx.compose.material.icons.outlined.SpeakerNotesOff
 import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material.icons.outlined.Verified
@@ -301,6 +302,23 @@ fun HabitSettingsPage(
                     LeadingIcon {
                         AvatarIcon(
                             icon = Icons.Outlined.SpeakerNotesOff,
+                            size = Sizes.Small,
+                            contentDescription = null,
+                        )
+                    }
+                }
+            }
+            prefsItem {
+                SwitchPref(
+                    key = "enableThreadPrefetch",
+                    title = stringResource(id = R.string.title_enable_thread_prefetch),
+                    defaultChecked = true,
+                    summaryOn = stringResource(id = R.string.summary_enable_thread_prefetch_on),
+                    summaryOff = stringResource(id = R.string.summary_enable_thread_prefetch_off),
+                ) {
+                    LeadingIcon {
+                        AvatarIcon(
+                            icon = Icons.Outlined.RocketLaunch,
                             size = Sizes.Small,
                             contentDescription = null,
                         )

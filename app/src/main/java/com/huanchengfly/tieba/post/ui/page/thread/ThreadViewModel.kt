@@ -33,8 +33,10 @@ import com.huanchengfly.tieba.post.arch.UiIntent
 import com.huanchengfly.tieba.post.arch.UiState
 import com.huanchengfly.tieba.post.arch.wrapImmutable
 import com.huanchengfly.tieba.post.removeAt
+import android.util.Log
 import com.huanchengfly.tieba.post.repository.EmptyDataException
 import com.huanchengfly.tieba.post.repository.PbPageRepository
+import com.huanchengfly.tieba.post.repository.ThreadDetailPrefetchManager
 import com.huanchengfly.tieba.post.ui.common.PbContentRender
 import com.huanchengfly.tieba.post.utils.BlockManager.shouldBlock
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -155,12 +157,21 @@ class ThreadViewModel @Inject constructor() :
                 )
             ).catch { emit(ThreadPartialChange.Init.Failure(it)) }
 
-        fun ThreadUiIntent.Load.producePartialChange(): Flow<ThreadPartialChange.Load> =
-            PbPageRepository
-                .pbPage(
+        fun ThreadUiIntent.Load.producePartialChange(): Flow<ThreadPartialChange.Load> {
+            val cached = if (page == 0 && postId == 0L && from.isEmpty()) {
+                ThreadDetailPrefetchManager.get(threadId)
+            } else null
+            if (cached != null) {
+                Log.d("ThreadPrefetch", "Cache hit threadId=$threadId")
+            } else if (page == 0 && postId == 0L && from.isEmpty()) {
+                Log.d("ThreadPrefetch", "Cache miss threadId=$threadId")
+            }
+            val source = cached?.let { flowOf(it) }
+                ?: PbPageRepository.pbPage(
                     threadId, page, postId, forumId, seeLz, sortType,
                     from = from.takeIf { it == ThreadPageFrom.FROM_STORE }.orEmpty()
                 )
+            return source
                 .map<PbPageResponse, ThreadPartialChange.Load> { response ->
                     if (response.data_?.page == null
                         || response.data_.thread?.author == null
@@ -195,6 +206,7 @@ class ThreadViewModel @Inject constructor() :
                 }
                 .onStart { emit(ThreadPartialChange.Load.Start) }
                 .catch { emit(ThreadPartialChange.Load.Failure(it)) }
+        }
 
         fun ThreadUiIntent.LoadFirstPage.producePartialChange(): Flow<ThreadPartialChange.LoadFirstPage> =
             PbPageRepository

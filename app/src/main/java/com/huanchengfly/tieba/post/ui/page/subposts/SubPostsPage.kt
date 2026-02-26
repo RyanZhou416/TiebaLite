@@ -623,7 +623,7 @@ private fun SubPostItem(
                     }
                 }
             },
-            onClick = { onReplyClick(subPost.get()) }.takeUnless { context.appPreferences.hideReply }
+            onClick = null
         ) {
             Card(
                 header = {

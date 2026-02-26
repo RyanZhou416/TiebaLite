@@ -1783,9 +1783,7 @@ fun PostCard(
         LongClickMenu(
             menuState = menuState,
             indication = null,
-            onClick = {
-                onReplyClick(post)
-            }.takeIf { !context.appPreferences.hideReply },
+            onClick = null,
             menuContent = {
                 if (!context.appPreferences.hideReply) {
                     DropdownMenuItem(

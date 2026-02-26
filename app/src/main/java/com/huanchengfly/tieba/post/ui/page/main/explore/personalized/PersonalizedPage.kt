@@ -35,6 +35,9 @@ import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.platform.LocalContext
+import com.huanchengfly.tieba.post.utils.appPreferences
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -73,6 +76,7 @@ import com.huanchengfly.tieba.post.ui.widgets.compose.LoadMoreLayout
 import com.huanchengfly.tieba.post.ui.widgets.compose.MyLazyColumn
 import com.huanchengfly.tieba.post.ui.widgets.compose.VerticalDivider
 import com.huanchengfly.tieba.post.ui.widgets.compose.states.StateScreen
+import com.huanchengfly.tieba.post.repository.ThreadDetailPrefetchManager
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.delay
@@ -122,6 +126,27 @@ fun PersonalizedPage(
     )
     val lazyListState = rememberLazyListState()
     viewModel.bindScrollToTopEvent(lazyListState = lazyListState)
+
+    val context = LocalContext.current
+    LaunchedEffect(lazyListState, data) {
+        snapshotFlow {
+            val visible = lazyListState.layoutInfo.visibleItemsInfo
+            visible.lastOrNull()?.index ?: -1
+        }.collect { lastVisibleIndex ->
+            if (!context.appPreferences.enableThreadPrefetch) return@collect
+            if (lastVisibleIndex < 0 || data.isEmpty()) return@collect
+            val prefetchRange = (lastVisibleIndex + 1).coerceAtMost(data.size)
+                .until((lastVisibleIndex + 4).coerceAtMost(data.size))
+            for (i in prefetchRange) {
+                val item = data[i]
+                ThreadDetailPrefetchManager.prefetch(
+                    item.thread.get { id },
+                    item.thread.get { forumId }
+                )
+            }
+        }
+    }
+
     val isEmpty by remember {
         derivedStateOf {
             data.isEmpty()
