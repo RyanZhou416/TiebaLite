@@ -892,8 +892,17 @@ fun ThreadPage(
         }
     }
 
+    var showRefreshIndicator by remember { mutableStateOf(false) }
+    LaunchedEffect(isRefreshing) {
+        if (isRefreshing) {
+            kotlinx.coroutines.delay(300)
+            showRefreshIndicator = true
+        } else {
+            showRefreshIndicator = false
+        }
+    }
     val pullRefreshState = rememberPullRefreshState(
-        refreshing = isRefreshing,
+        refreshing = showRefreshIndicator,
         onRefresh = {
             viewModel.send(
                 ThreadUiIntent.LoadFirstPage(
@@ -1579,7 +1588,7 @@ fun ThreadPage(
                         }
 
                         PullRefreshIndicator(
-                            refreshing = isRefreshing,
+                            refreshing = showRefreshIndicator,
                             state = pullRefreshState,
                             modifier = Modifier.align(Alignment.TopCenter),
                             backgroundColor = ExtendedTheme.colors.pullRefreshIndicator,

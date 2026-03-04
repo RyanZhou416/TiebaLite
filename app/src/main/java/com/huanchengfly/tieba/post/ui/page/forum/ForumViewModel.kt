@@ -83,7 +83,7 @@ class ForumViewModel @Inject constructor() :
             )
 
         private fun ForumUiIntent.Load.produceLoadPartialChange() =
-            FrsPageRepository.frsPage(forumName, 1, 1, sortType, null, true)
+            FrsPageRepository.frsPage(forumName, 1, 1, sortType)
                 .map {
                     if (it.data_?.forum != null) ForumPartialChange.Load.Success(
                         it.data_.forum,

@@ -25,6 +25,7 @@ import com.github.panpf.sketch.fetch.OkHttpHttpUriFetcher
 import com.github.panpf.sketch.fetch.internal.OkHttpHttpUriFetcherProvider
 import com.github.panpf.sketch.http.OkHttpStack
 import com.huanchengfly.tieba.post.activities.BaseActivity
+import com.huanchengfly.tieba.post.api.retrofit.RetrofitTiebaApi
 import com.huanchengfly.tieba.post.components.ClipBoardLinkDetector
 import com.huanchengfly.tieba.post.components.OAIDGetter
 import com.huanchengfly.tieba.post.ui.common.theme.compose.dynamicTonalPalette
@@ -118,6 +119,7 @@ class App : Application(), SingletonSketch.Factory {
             BlockManager.init()
             EmoticonManager.init(this@App)
         }
+        RetrofitTiebaApi.prewarmConnections(appScope)
     }
 
     //解决魅族 Flyme 系统夜间模式强制反色

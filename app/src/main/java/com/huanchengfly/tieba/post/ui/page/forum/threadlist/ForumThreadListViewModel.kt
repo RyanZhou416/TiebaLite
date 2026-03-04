@@ -124,8 +124,7 @@ private class ForumThreadListPartialChangeProducer(val type: ForumThreadListType
             1,
             1,
             sortType.takeIf { type == ForumThreadListType.Latest } ?: -1,
-            goodClassifyId.takeIf { type == ForumThreadListType.Good },
-            forceNew = true
+            goodClassifyId.takeIf { type == ForumThreadListType.Good }
         )
             .map<FrsPageResponse, ForumThreadListPartialChange.Refresh> { response ->
                 if (response.data_?.page == null) throw TiebaUnknownException

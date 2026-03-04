@@ -136,7 +136,7 @@ fun PersonalizedPage(
             if (!context.appPreferences.enableThreadPrefetch) return@collect
             if (lastVisibleIndex < 0 || data.isEmpty()) return@collect
             val prefetchRange = (lastVisibleIndex + 1).coerceAtMost(data.size)
-                .until((lastVisibleIndex + 4).coerceAtMost(data.size))
+                .until((lastVisibleIndex + 6).coerceAtMost(data.size))
             for (i in prefetchRange) {
                 val item = data[i]
                 ThreadDetailPrefetchManager.prefetch(
@@ -160,6 +160,9 @@ fun PersonalizedPage(
     var refreshCount by remember {
         mutableIntStateOf(0)
     }
+    var refreshTipKey by remember {
+        mutableIntStateOf(0)
+    }
     var showRefreshTip by remember {
         mutableStateOf(false)
     }
@@ -171,11 +174,12 @@ fun PersonalizedPage(
     }
     viewModel.onEvent<PersonalizedUiEvent.RefreshSuccess> {
         refreshCount = it.count
+        refreshTipKey++
         showRefreshTip = true
     }
 
     if (showRefreshTip) {
-        LaunchedEffect(Unit) {
+        LaunchedEffect(refreshTipKey) {
             launch {
                 delay(20)
                 lazyListState.scrollToItem(0, 0)

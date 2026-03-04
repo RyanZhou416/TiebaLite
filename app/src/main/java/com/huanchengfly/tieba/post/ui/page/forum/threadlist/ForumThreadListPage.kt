@@ -339,7 +339,7 @@ fun ForumThreadListPage(
             if (!context.appPreferences.enableThreadPrefetch) return@collect
             if (lastVisibleIndex < 0 || threadList.isEmpty()) return@collect
             val prefetchRange = (lastVisibleIndex + 1).coerceAtMost(threadList.size)
-                .until((lastVisibleIndex + 4).coerceAtMost(threadList.size))
+                .until((lastVisibleIndex + 6).coerceAtMost(threadList.size))
             for (i in prefetchRange) {
                 val item = threadList[i]
                 ThreadDetailPrefetchManager.prefetch(

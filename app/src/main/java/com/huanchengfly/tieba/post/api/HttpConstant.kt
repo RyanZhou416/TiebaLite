@@ -54,6 +54,7 @@ object Header {
     const val CLIENT_TYPE = "client_type"
     const val CLIENT_USER_TOKEN = "client_user_token"
     const val CLIENT_LOG_ID = "client_logid"
+    const val ACCEPT_ENCODING = "Accept-Encoding"
     const val X_BD_DATA_TYPE = "x_bd_data_type"
 }
 

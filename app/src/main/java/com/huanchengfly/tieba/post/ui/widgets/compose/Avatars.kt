@@ -127,8 +127,7 @@ fun Avatar(
 
     AsyncImage(
         request = ComposableImageRequest(data) {
-            placeholder(DrawableStateImage(RealDrawableFetcher(ImageUtil.getPlaceHolder(context, 0))))
-            crossfade()
+            error(DrawableStateImage(RealDrawableFetcher(ImageUtil.getPlaceHolder(context, 0))))
         },
         contentDescription = contentDescription,
         contentScale = ContentScale.Crop,
@@ -147,8 +146,7 @@ fun Avatar(
 
     AsyncImage(
         request = ComposableImageRequest(newResourceUri(data)) {
-            placeholder(DrawableStateImage(RealDrawableFetcher(ImageUtil.getPlaceHolder(context, 0))))
-            crossfade()
+            error(DrawableStateImage(RealDrawableFetcher(ImageUtil.getPlaceHolder(context, 0))))
         },
         contentDescription = contentDescription,
         contentScale = ContentScale.Crop,

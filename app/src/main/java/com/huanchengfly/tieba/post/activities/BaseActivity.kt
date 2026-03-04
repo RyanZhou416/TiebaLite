@@ -34,7 +34,7 @@ import com.huanchengfly.tieba.post.ui.widgets.VoicePlayerView
 import com.huanchengfly.tieba.post.ui.widgets.theme.TintToolbar
 import com.huanchengfly.tieba.post.utils.AppPreferencesUtils
 import com.huanchengfly.tieba.post.utils.DialogUtil
-import com.huanchengfly.tieba.post.utils.HandleBackUtil
+
 import com.huanchengfly.tieba.post.utils.ThemeUtil
 import com.huanchengfly.tieba.post.utils.calcStatusBarColorInt
 import kotlinx.coroutines.CoroutineScope
@@ -167,9 +167,7 @@ abstract class BaseActivity : AppCompatActivity(), ExtraRefreshable, CoroutineSc
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             android.R.id.home -> {
-                if (!HandleBackUtil.handleBackPress(this)) {
-                    finish()
-                }
+                finish()
                 return true
             }
         }
@@ -194,12 +192,6 @@ abstract class BaseActivity : AppCompatActivity(), ExtraRefreshable, CoroutineSc
         super.setSupportActionBar(toolbar)
         if (toolbar is TintToolbar) {
             mTintToolbar = toolbar
-        }
-    }
-
-    override fun onBackPressed() {
-        if (!HandleBackUtil.handleBackPress(this)) {
-            super.onBackPressed()
         }
     }
 

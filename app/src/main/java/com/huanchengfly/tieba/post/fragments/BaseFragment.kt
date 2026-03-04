@@ -12,7 +12,7 @@ import androidx.annotation.CallSuper
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import com.huanchengfly.tieba.post.App
-import com.huanchengfly.tieba.post.interfaces.BackHandledInterface
+
 import com.huanchengfly.tieba.post.interfaces.Refreshable
 import com.huanchengfly.tieba.post.isLandscape
 import com.huanchengfly.tieba.post.isPortrait
@@ -20,7 +20,7 @@ import com.huanchengfly.tieba.post.isTablet
 import com.huanchengfly.tieba.post.ui.common.theme.utils.ThemeUtils
 import com.huanchengfly.tieba.post.utils.AppPreferencesUtils
 import com.huanchengfly.tieba.post.utils.DialogUtil
-import com.huanchengfly.tieba.post.utils.HandleBackUtil
+
 import kotlinx.coroutines.*
 import kotlinx.coroutines.Dispatchers.IO
 import java.lang.ref.WeakReference
@@ -38,7 +38,7 @@ import kotlin.coroutines.CoroutineContext
  * @see .onFragmentVisibleChange
  * @see .onFragmentFirstVisible
  */
-abstract class BaseFragment : Fragment(), BackHandledInterface, CoroutineScope {
+abstract class BaseFragment : Fragment(), CoroutineScope {
     val job = Job()
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Main + job
@@ -82,10 +82,6 @@ abstract class BaseFragment : Fragment(), BackHandledInterface, CoroutineScope {
     @CallSuper
     private fun onAttachToContext(context: Context) {
         attachContextWeakReference = WeakReference(context)
-    }
-
-    override fun onBackPressed(): Boolean {
-        return HandleBackUtil.handleBackPress(this)
     }
 
     //setUserVisibleHint()在Fragment创建时会先被调用一次，传入isVisibleToUser = false

@@ -353,6 +353,14 @@
     <string name="summary_settings_habit">万般功能不如自己顺手</string>
     <string name="summary_settings_oksign">一键签到功能设定</string>
     <string name="summary_settings_more">其他杂项</string>
+    <string name="title_proxy_enabled">启用代理</string>
+    <string name="summary_proxy_enabled">通过 HTTP 或 SOCKS 代理连接百度服务器</string>
+    <string name="title_proxy_type">代理类型</string>
+    <string name="title_proxy_host">代理地址</string>
+    <string name="summary_proxy_host">主机名或 IP 地址</string>
+    <string name="title_proxy_port">代理端口</string>
+    <string name="proxy_type_http">HTTP</string>
+    <string name="proxy_type_socks">SOCKS</string>
     <string name="tip_start">提示：</string>
     <string name="title_dialog_modify_little_tail">修改小尾巴</string>
     <string name="no_more">没有更多了</string>

@@ -2,18 +2,15 @@ package com.huanchengfly.tieba.post.ui.widgets.compose
 
 import android.content.Context
 import android.graphics.Color
-import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -122,8 +119,6 @@ private fun PreviewImage(
     val screenCenterX = screenWidth / 2
     val screenHeight = App.ScreenInfo.EXACT_SCREEN_HEIGHT
     val screenCenterY = screenHeight / 2
-    val statusBarHeight = WindowInsets.statusBars.getTop(density)
-
     if (showFullScreenLayout) {
         val animProgress = remember { Animatable(0f) }
 
@@ -155,7 +150,8 @@ private fun PreviewImage(
 
                     Box(
                         modifier = Modifier
-                            .fillMaxSize(),
+                            .fillMaxSize()
+                            .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.5f * animProgress.value)),
                         contentAlignment = Alignment.Center
                     ) {
                         Box(
@@ -185,7 +181,7 @@ private fun PreviewImage(
                                             animProgress.value
                                         ).toInt(),
                                         lerp(
-                                            layoutOffset.y - (screenCenterY - currentLayoutHeightPx / 2 + statusBarHeight / 2),
+                                            layoutOffset.y - (screenCenterY - currentLayoutHeightPx / 2),
                                             0f,
                                             animProgress.value
                                         ).toInt()
@@ -241,8 +237,7 @@ fun NetworkImage(
     var layoutOffset by remember { mutableStateOf(Offset.Zero) }
 
     val request = ComposableImageRequest(imageUri) {
-        placeholder(DrawableStateImage(RealDrawableFetcher(ImageUtil.getPlaceHolder(context, 0))))
-        crossfade()
+        error(DrawableStateImage(RealDrawableFetcher(ImageUtil.getPlaceHolder(context, 0))))
         if (!shouldLoad) {
             depth(Depth.LOCAL)
         }
@@ -299,11 +294,6 @@ fun NetworkImage(
                             }
                         }
                     )
-                }
-            }
-            .pointerInput(Unit) {
-                detectDragGesturesAfterLongPress { change, dragAmount ->
-                    Log.i("NetworkImage", "dragAmount: $dragAmount")
                 }
             }
             .then(modifier)

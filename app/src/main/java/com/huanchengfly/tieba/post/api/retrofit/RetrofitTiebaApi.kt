@@ -8,6 +8,8 @@ import com.huanchengfly.tieba.post.api.Param
 import com.huanchengfly.tieba.post.api.getCookie
 import com.huanchengfly.tieba.post.api.getUserAgent
 import com.huanchengfly.tieba.post.api.models.OAID
+import com.huanchengfly.tieba.post.api.CachingDns
+import com.huanchengfly.tieba.post.api.SettingsProxySelector
 import com.huanchengfly.tieba.post.api.retrofit.adapter.DeferredCallAdapterFactory
 import com.huanchengfly.tieba.post.api.retrofit.adapter.FlowCallAdapterFactory
 import com.huanchengfly.tieba.post.api.retrofit.converter.gson.GsonConverterFactory
@@ -38,10 +40,14 @@ import com.huanchengfly.tieba.post.utils.CuidUtils
 import com.huanchengfly.tieba.post.utils.DeviceUtils
 import com.huanchengfly.tieba.post.utils.MobileInfoUtil
 import com.huanchengfly.tieba.post.utils.UIDUtil
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import okhttp3.ConnectionPool
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
+import okhttp3.Request
 import retrofit2.Retrofit
 import retrofit2.converter.wire.WireConverterFactory
 import java.text.SimpleDateFormat
@@ -52,14 +58,16 @@ import kotlin.math.roundToInt
 
 
 object RetrofitTiebaApi {
-    private const val READ_TIMEOUT = 60L
-    private const val CONNECT_TIMEOUT = 60L
-    private const val WRITE_TIMEOUT = 60L
+    private const val CONNECT_TIMEOUT = 15L
+    private const val READ_TIMEOUT = 30L
+    private const val WRITE_TIMEOUT = 20L
 
     private val initTime = System.currentTimeMillis()
     internal val randomClientId = "wappc_${initTime}_${(Math.random() * 1000).roundToInt()}"
     private val stParamInterceptor = StParamInterceptor()
-    private val connectionPool = ConnectionPool(32, 5, TimeUnit.MINUTES)
+    private val connectionPool = ConnectionPool(32, 10, TimeUnit.MINUTES)
+    private val cachingDns = CachingDns()
+    private val settingsProxySelector = SettingsProxySelector()
 
     private val defaultCommonParamInterceptor = CommonParamInterceptor(
         Param.BDUSS to { AccountUtil.getBduss() },
@@ -75,14 +83,14 @@ object RetrofitTiebaApi {
     private val defaultCommonHeaderInterceptor =
         CommonHeaderInterceptor(
             Header.COOKIE to { "ka=open" },
-            Header.PRAGMA to { "no-cache" }
+            Header.ACCEPT_ENCODING to { "gzip" }
         )
     private val gsonConverterFactory = GsonConverterFactory.create()
     private val sortAndSignInterceptor = SortAndSignInterceptor("tiebaclient!!!")
 
     val NEW_TIEBA_API: NewTiebaApi by lazy {
         createJsonApi<NewTiebaApi>(
-            "http://c.tieba.baidu.com/",
+            "https://tiebac.baidu.com/",
             defaultCommonHeaderInterceptor,
             CommonHeaderInterceptor(
                 Header.USER_AGENT to { "bdtb for Android 8.2.2" },
@@ -155,7 +163,7 @@ object RetrofitTiebaApi {
 
     val MINI_TIEBA_API: MiniTiebaApi by lazy {
         createJsonApi<MiniTiebaApi>(
-            "http://c.tieba.baidu.com/",
+            "https://tiebac.baidu.com/",
             defaultCommonHeaderInterceptor,
             CommonHeaderInterceptor(
                 Header.USER_AGENT to { "bdtb for Android 7.2.0.0" },
@@ -175,7 +183,7 @@ object RetrofitTiebaApi {
 
     val OFFICIAL_TIEBA_API: OfficialTiebaApi by lazy {
         createJsonApi<OfficialTiebaApi>(
-            "http://c.tieba.baidu.com/",
+            "https://tiebac.baidu.com/",
             CommonHeaderInterceptor(
                 Header.USER_AGENT to { "bdtb for Android 12.25.1.0" },
                 Header.COOKIE to { "CUID=${CuidUtils.getNewCuid()};ka=open;TBBRAND=${Build.MODEL};BAIDUID=${ClientUtils.baiduId};" },
@@ -338,6 +346,26 @@ object RetrofitTiebaApi {
         )
     }
 
+    fun prewarmConnections(scope: CoroutineScope) {
+        val client = OkHttpClient.Builder()
+            .connectionPool(connectionPool)
+            .dns(cachingDns)
+            .proxySelector(settingsProxySelector)
+            .connectTimeout(5, TimeUnit.SECONDS)
+            .build()
+        listOf("tiebac.baidu.com", "tieba.baidu.com").forEach { host ->
+            scope.launch(Dispatchers.IO) {
+                runCatching {
+                    val request = Request.Builder()
+                        .url("https://$host/")
+                        .head()
+                        .build()
+                    client.newCall(request).execute().close()
+                }
+            }
+        }
+    }
+
     private val json = Json {
         isLenient = true
         ignoreUnknownKeys = true
@@ -353,7 +381,8 @@ object RetrofitTiebaApi {
             .addConverterFactory(json.asConverterFactory())
             .addConverterFactory(gsonConverterFactory)
             .client(OkHttpClient.Builder().apply {
-//                addInterceptor()
+                dns(cachingDns)
+                proxySelector(settingsProxySelector)
                 connectionPool(connectionPool)
             }.build())
             .build()
@@ -374,6 +403,8 @@ object RetrofitTiebaApi {
             readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
             connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
             writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
+            dns(cachingDns)
+            proxySelector(settingsProxySelector)
             interceptors.forEach {
                 addInterceptor(it)
             }
@@ -400,6 +431,8 @@ object RetrofitTiebaApi {
             readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
             connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
             writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
+            dns(cachingDns)
+            proxySelector(settingsProxySelector)
             interceptors.forEach {
                 addInterceptor(it)
             }

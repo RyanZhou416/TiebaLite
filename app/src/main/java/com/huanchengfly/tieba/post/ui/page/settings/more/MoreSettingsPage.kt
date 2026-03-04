@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.OfflineBolt
+import androidx.compose.material.icons.outlined.VpnKey
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -16,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -28,7 +30,10 @@ import com.huanchengfly.tieba.post.BuildConfig
 import com.huanchengfly.tieba.post.R
 import com.huanchengfly.tieba.post.dataStore
 import com.huanchengfly.tieba.post.ui.common.prefs.PrefsScreen
+import com.huanchengfly.tieba.post.ui.common.prefs.depend
 import com.huanchengfly.tieba.post.ui.common.prefs.dependNot
+import com.huanchengfly.tieba.post.ui.common.prefs.widgets.EditTextPref
+import com.huanchengfly.tieba.post.ui.common.prefs.widgets.ListPref
 import com.huanchengfly.tieba.post.ui.common.prefs.widgets.SwitchPref
 import com.huanchengfly.tieba.post.ui.common.prefs.widgets.TextPref
 import com.huanchengfly.tieba.post.ui.page.destinations.AboutPageDestination
@@ -48,7 +53,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class)
 @Destination<RootGraph>
 @Composable
 fun MoreSettingsPage(
@@ -143,6 +148,82 @@ fun MoreSettingsPage(
                     summary = {
                         if (it) stringResource(id = R.string.tip_use_custom_tab_on)
                         else stringResource(id = R.string.tip_use_custom_tab)
+                    },
+                )
+            }
+            prefsItem {
+                SwitchPref(
+                    leadingIcon = {
+                        LeadingIcon {
+                            AvatarIcon(
+                                icon = Icons.Outlined.VpnKey,
+                                size = Sizes.Small,
+                                contentDescription = null,
+                            )
+                        }
+                    },
+                    key = "proxy_enabled",
+                    title = stringResource(id = R.string.title_proxy_enabled),
+                    defaultChecked = false,
+                    summary = stringResource(id = R.string.summary_proxy_enabled),
+                )
+            }
+            prefsItem {
+                ListPref(
+                    key = "proxy_type",
+                    title = stringResource(id = R.string.title_proxy_type),
+                    entries = mapOf(
+                        "http" to stringResource(id = R.string.proxy_type_http),
+                        "socks" to stringResource(id = R.string.proxy_type_socks),
+                    ),
+                    defaultValue = "http",
+                    useSelectedAsSummary = true,
+                    enabled = depend(key = "proxy_enabled"),
+                    leadingIcon = {
+                        LeadingIcon {
+                            AvatarIcon(
+                                icon = Icons.Outlined.VpnKey,
+                                size = Sizes.Small,
+                                contentDescription = null,
+                            )
+                        }
+                    },
+                )
+            }
+            prefsItem {
+                EditTextPref(
+                    key = "proxy_host",
+                    title = stringResource(id = R.string.title_proxy_host),
+                    summary = stringResource(id = R.string.summary_proxy_host),
+                    dialogTitle = stringResource(id = R.string.title_proxy_host),
+                    defaultValue = "",
+                    enabled = depend(key = "proxy_enabled"),
+                    leadingIcon = {
+                        LeadingIcon {
+                            AvatarIcon(
+                                icon = Icons.Outlined.VpnKey,
+                                size = Sizes.Small,
+                                contentDescription = null,
+                            )
+                        }
+                    },
+                )
+            }
+            prefsItem {
+                EditTextPref(
+                    key = "proxy_port",
+                    title = stringResource(id = R.string.title_proxy_port),
+                    dialogTitle = stringResource(id = R.string.title_proxy_port),
+                    defaultValue = "",
+                    enabled = depend(key = "proxy_enabled"),
+                    leadingIcon = {
+                        LeadingIcon {
+                            AvatarIcon(
+                                icon = Icons.Outlined.VpnKey,
+                                size = Sizes.Small,
+                                contentDescription = null,
+                            )
+                        }
                     },
                 )
             }

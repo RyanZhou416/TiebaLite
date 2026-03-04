@@ -15,9 +15,7 @@ import kotlinx.coroutines.delay
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.VisibilityThreshold
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -48,7 +46,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -540,40 +537,19 @@ class MainActivityV2 : BaseComposeActivity() {
 }
 
 private object TiebaDefaultAnimations : NavHostAnimatedDestinationStyle() {
-    private val AnimationSpec = spring(
-        stiffness = Spring.StiffnessMediumLow,
-        visibilityThreshold = IntOffset.VisibilityThreshold
-    )
-
     override val enterTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
-        slideIntoContainer(
-            AnimatedContentTransitionScope.SlideDirection.Start,
-            animationSpec = AnimationSpec,
-            initialOffset = { it }
-        )
+        slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(300))
     }
 
     override val exitTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
-        slideOutOfContainer(
-            AnimatedContentTransitionScope.SlideDirection.End,
-            animationSpec = AnimationSpec,
-            targetOffset = { -it }
-        )
+        slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(300))
     }
 
     override val popEnterTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
-        slideIntoContainer(
-            AnimatedContentTransitionScope.SlideDirection.Start,
-            animationSpec = AnimationSpec,
-            initialOffset = { -it }
-        )
+        slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(300))
     }
 
     override val popExitTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
-        slideOutOfContainer(
-            AnimatedContentTransitionScope.SlideDirection.End,
-            animationSpec = AnimationSpec,
-            targetOffset = { it }
-        )
+        slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(300))
     }
 }

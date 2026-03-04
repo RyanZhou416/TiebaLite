@@ -150,7 +150,9 @@ class ThreadViewModel @Inject constructor() :
                     threadInfo?.title.orEmpty(),
                     threadInfo?.author,
                     threadInfo,
-                    threadInfo?.firstPostContent?.renders ?: emptyList(),
+                    threadInfo?.firstPostContent?.renders
+                        ?: threadInfo?.richAbstract?.renders
+                        ?: emptyList(),
                     postId,
                     seeLz,
                     sortType,
@@ -158,12 +160,13 @@ class ThreadViewModel @Inject constructor() :
             ).catch { emit(ThreadPartialChange.Init.Failure(it)) }
 
         fun ThreadUiIntent.Load.producePartialChange(): Flow<ThreadPartialChange.Load> {
-            val cached = if (page == 0 && postId == 0L && from.isEmpty()) {
+            val isInitialLoad = page == 0 && postId == 0L && from.isEmpty()
+            val cached = if (isInitialLoad) {
                 ThreadDetailPrefetchManager.get(threadId)
             } else null
             if (cached != null) {
                 Log.d("ThreadPrefetch", "Cache hit threadId=$threadId")
-            } else if (page == 0 && postId == 0L && from.isEmpty()) {
+            } else if (isInitialLoad) {
                 Log.d("ThreadPrefetch", "Cache miss threadId=$threadId")
             }
             val source = cached?.let { flowOf(it) }

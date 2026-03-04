@@ -15,17 +15,25 @@ import java.util.concurrent.ConcurrentHashMap
 object ThreadDetailPrefetchManager {
 
     private const val TAG = "ThreadPrefetch"
-    private const val MAX_CACHE_SIZE = 15
-    private const val MAX_CONCURRENCY = 2
+    private const val MAX_CACHE_SIZE = 20
+    private const val MAX_CONCURRENCY = 3
+    private const val CACHE_TTL_MS = 5 * 60 * 1000L
+
+    private data class CacheEntry(
+        val response: PbPageResponse,
+        val timestamp: Long = System.currentTimeMillis()
+    ) {
+        fun isExpired() = System.currentTimeMillis() - timestamp > CACHE_TTL_MS
+    }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val semaphore = Semaphore(MAX_CONCURRENCY)
     private val inFlight = ConcurrentHashMap<Long, Job>()
 
-    private val cache = object : LinkedHashMap<Long, PbPageResponse>(
+    private val cache = object : LinkedHashMap<Long, CacheEntry>(
         MAX_CACHE_SIZE + 1, 0.75f, true
     ) {
-        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Long, PbPageResponse>?): Boolean {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Long, CacheEntry>?): Boolean {
             return size > MAX_CACHE_SIZE
         }
     }
@@ -36,7 +44,8 @@ object ThreadDetailPrefetchManager {
     fun prefetch(threadId: Long, forumId: Long? = null) {
         if (!enabled) return
         synchronized(cache) {
-            if (cache.containsKey(threadId)) return
+            val existing = cache[threadId]
+            if (existing != null && !existing.isExpired()) return
         }
         if (inFlight.containsKey(threadId)) return
 
@@ -48,7 +57,7 @@ object ThreadDetailPrefetchManager {
                         .firstOrNull()
                     if (response != null) {
                         synchronized(cache) {
-                            cache[threadId] = response
+                            cache[threadId] = CacheEntry(response)
                         }
                         Log.d(TAG, "Prefetched threadId=$threadId")
                     }
@@ -64,7 +73,12 @@ object ThreadDetailPrefetchManager {
 
     fun get(threadId: Long): PbPageResponse? {
         synchronized(cache) {
-            return cache.remove(threadId)
+            val entry = cache[threadId] ?: return null
+            if (entry.isExpired()) {
+                cache.remove(threadId)
+                return null
+            }
+            return entry.response
         }
     }
 

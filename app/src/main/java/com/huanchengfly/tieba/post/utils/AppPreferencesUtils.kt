@@ -168,6 +168,14 @@ open class AppPreferencesUtils private constructor(ctx: Context) {
 
     var postOrReplyWarning by DataStoreDelegates.boolean(defaultValue = true)
 
+    var proxyEnabled by DataStoreDelegates.boolean(defaultValue = false, key = "proxy_enabled")
+
+    var proxyHost by DataStoreDelegates.string(key = "proxy_host")
+
+    var proxyPort by DataStoreDelegates.string(key = "proxy_port")
+
+    var proxyType by DataStoreDelegates.string(defaultValue = "http", key = "proxy_type")
+
     var radius by DataStoreDelegates.int(defaultValue = 8)
 
     var signDay by DataStoreDelegates.int(defaultValue = -1, key = "sign_day")
