@@ -40,9 +40,10 @@ import com.huanchengfly.tieba.post.ui.widgets.compose.TitleCentredToolbar
 import com.huanchengfly.tieba.post.utils.appPreferences
 import com.huanchengfly.tieba.post.utils.launchUrl
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
-@Destination
+@Destination<RootGraph>
 @Composable
 fun AboutPage(
     navigator: DestinationsNavigator,

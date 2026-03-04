@@ -21,11 +21,12 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.github.panpf.sketch.compose.AsyncImage
+import com.github.panpf.sketch.AsyncImage
+import com.github.panpf.sketch.asBitmap
 import com.github.panpf.sketch.fetch.newFileUri
 import com.github.panpf.sketch.fetch.newResourceUri
-import com.github.panpf.sketch.request.LoadRequest
-import com.github.panpf.sketch.request.LoadResult
+import com.github.panpf.sketch.request.ImageRequest
+import com.github.panpf.sketch.request.ImageResult
 import com.github.panpf.sketch.request.execute
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.huanchengfly.tieba.post.App
@@ -138,7 +139,7 @@ object EmoticonManager {
                 ),
                 children = {
                     AsyncImage(
-                        imageUri = rememberEmoticonUri(id = id),
+                        uri = rememberEmoticonUri(id = id),
                         contentDescription = stringResource(
                             id = R.string.emoticon,
                             getEmoticonNameById(id) ?: ""
@@ -298,13 +299,13 @@ object EmoticonManager {
             val resId = getEmoticonResId(context, it)
             val emoticonFile = getEmoticonFile(it)
             if (resId == 0 && !emoticonFile.exists()) {
-                val loadEmoticonResult = LoadRequest(
+                val loadEmoticonResult = ImageRequest(
                     context,
                     "http://static.tieba.baidu.com/tb/editor/images/client/$it.png"
                 ).execute()
-                if (loadEmoticonResult is LoadResult.Success) {
+                if (loadEmoticonResult is ImageResult.Success) {
                     ImageUtil.bitmapToFile(
-                        loadEmoticonResult.bitmap,
+                        loadEmoticonResult.image.asBitmap(),
                         emoticonFile,
                         Bitmap.CompressFormat.PNG
                     )

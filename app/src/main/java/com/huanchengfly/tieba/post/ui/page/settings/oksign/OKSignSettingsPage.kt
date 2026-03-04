@@ -46,11 +46,12 @@ import com.huanchengfly.tieba.post.utils.isIgnoringBatteryOptimizations
 import com.huanchengfly.tieba.post.utils.powerManager
 import com.huanchengfly.tieba.post.utils.requestIgnoreBatteryOptimizations
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class)
-@Destination
+@Destination<RootGraph>
 @Composable
 fun OKSignSettingsPage(
     navigator: DestinationsNavigator,

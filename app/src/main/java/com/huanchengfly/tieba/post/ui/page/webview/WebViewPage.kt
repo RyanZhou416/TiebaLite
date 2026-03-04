@@ -54,6 +54,8 @@ import com.huanchengfly.tieba.post.R
 import com.huanchengfly.tieba.post.arch.GlobalEvent
 import com.huanchengfly.tieba.post.arch.onGlobalEvent
 import com.huanchengfly.tieba.post.components.dialogs.PermissionDialog
+import com.huanchengfly.tieba.post.interfaces.OnDeniedCallback
+import com.huanchengfly.tieba.post.interfaces.OnGrantedCallback
 import com.huanchengfly.tieba.post.models.PermissionBean
 import com.huanchengfly.tieba.post.ui.common.theme.compose.ExtendedTheme
 import com.huanchengfly.tieba.post.ui.common.theme.utils.ThemeUtils
@@ -79,6 +81,7 @@ import com.huanchengfly.tieba.post.utils.TiebaUtil
 import com.huanchengfly.tieba.post.utils.appPreferences
 import com.huanchengfly.tieba.post.utils.compose.launchActivityForResult
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.cancellable
@@ -89,7 +92,7 @@ import java.lang.ref.WeakReference
 import java.util.UUID
 
 @SuppressLint("SetJavaScriptEnabled")
-@Destination
+@Destination<RootGraph>
 @Composable
 fun WebViewPage(
     initialUrl: String,
@@ -417,7 +420,7 @@ open class MyWebViewClient(
                 R.drawable.ic_round_exit_to_app
             )
         )
-            .setOnGrantedCallback { context.startActivity(intent) }
+            .apply { onGrantedCallback = OnGrantedCallback { context.startActivity(intent) } }
             .show()
     }
 
@@ -507,34 +510,36 @@ class MyWebChromeClient(
                 R.drawable.ic_round_location_on
             )
         )
-            .setOnGrantedCallback { isForever: Boolean ->
-                PermissionUtils.askPermission(
-                    context,
-                    PermissionData(
-                        listOf(
-                            Permission.ACCESS_COARSE_LOCATION,
-                            Permission.ACCESS_FINE_LOCATION
+            .apply {
+                onGrantedCallback = OnGrantedCallback { isForever ->
+                    PermissionUtils.askPermission(
+                        context,
+                        PermissionData(
+                            listOf(
+                                Permission.ACCESS_COARSE_LOCATION,
+                                Permission.ACCESS_FINE_LOCATION
+                            ),
+                            context.getString(R.string.usage_webview_location_permission)
                         ),
-                        context.getString(R.string.usage_webview_location_permission)
-                    ),
-                    R.string.tip_no_permission,
-                    {
-                        if (isEnabledLocationFunction()) {
-                            callback.invoke(origin, true, isForever)
-                        } else {
-                            callback.invoke(origin, false, false)
+                        R.string.tip_no_permission,
+                        {
+                            if (isEnabledLocationFunction()) {
+                                callback.invoke(origin, true, isForever)
+                            } else {
+                                callback.invoke(origin, false, false)
+                            }
                         }
+                    ) {
+                        callback.invoke(origin, false, false)
                     }
-                ) {
-                    callback.invoke(origin, false, false)
                 }
-            }
-            .setOnDeniedCallback {
-                callback.invoke(
-                    origin,
-                    false,
-                    false
-                )
+                onDeniedCallback = OnDeniedCallback {
+                    callback.invoke(
+                        origin,
+                        false,
+                        false
+                    )
+                }
             }
             .show()
     }
@@ -582,7 +587,7 @@ class MyWebChromeClient(
                     context,
                     PermissionBean(
                         PermissionDialog.CustomPermission.PERMISSION_CLIPBOARD_COPY,
-                        uri.host,
+                        uri.host!!,
                         context.getString(
                             R.string.title_ask_permission_clipboard_copy,
                             uri.host
@@ -590,8 +595,10 @@ class MyWebChromeClient(
                         R.drawable.ic_round_file_copy
                     )
                 )
-                    .setOnGrantedCallback { result.confirm() }
-                    .setOnDeniedCallback { result.cancel() }
+                    .apply {
+                        onGrantedCallback = OnGrantedCallback { result.confirm() }
+                        onDeniedCallback = OnDeniedCallback { result.cancel() }
+                    }
                     .show()
             }
         } else {

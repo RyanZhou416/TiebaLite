@@ -8,6 +8,7 @@ import com.huanchengfly.tieba.post.arch.PartialChangeProducer
 import com.huanchengfly.tieba.post.arch.UiEvent
 import com.huanchengfly.tieba.post.arch.UiIntent
 import com.huanchengfly.tieba.post.arch.UiState
+import com.huanchengfly.tieba.post.models.database.AppDatabase
 import com.huanchengfly.tieba.post.models.database.History
 import com.huanchengfly.tieba.post.utils.DateTimeUtils
 import com.huanchengfly.tieba.post.utils.HistoryUtil
@@ -24,8 +25,6 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onStart
-import org.litepal.LitePal
-import org.litepal.extension.deleteAll
 import javax.inject.Inject
 
 abstract class HistoryListViewModel :
@@ -46,20 +45,26 @@ abstract class HistoryListViewModel :
 
 @Stable
 @HiltViewModel
-class ThreadHistoryListViewModel @Inject constructor() : HistoryListViewModel() {
+class ThreadHistoryListViewModel @Inject constructor(
+    private val database: AppDatabase,
+) : HistoryListViewModel() {
     override fun createPartialChangeProducer(): PartialChangeProducer<HistoryListUiIntent, HistoryListPartialChange, HistoryListUiState> =
-        HistoryListPartialChangeProducer(HistoryUtil.TYPE_THREAD)
+        HistoryListPartialChangeProducer(HistoryUtil.TYPE_THREAD, database)
 }
 
 @Stable
 @HiltViewModel
-class ForumHistoryListViewModel @Inject constructor() : HistoryListViewModel() {
+class ForumHistoryListViewModel @Inject constructor(
+    private val database: AppDatabase,
+) : HistoryListViewModel() {
     override fun createPartialChangeProducer(): PartialChangeProducer<HistoryListUiIntent, HistoryListPartialChange, HistoryListUiState> =
-        HistoryListPartialChangeProducer(HistoryUtil.TYPE_FORUM)
+        HistoryListPartialChangeProducer(HistoryUtil.TYPE_FORUM, database)
 }
 
-private class HistoryListPartialChangeProducer(val type: Int) :
-    PartialChangeProducer<HistoryListUiIntent, HistoryListPartialChange, HistoryListUiState> {
+private class HistoryListPartialChangeProducer(
+    val type: Int,
+    val database: AppDatabase,
+) : PartialChangeProducer<HistoryListUiIntent, HistoryListPartialChange, HistoryListUiState> {
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun toPartialChangeFlow(intentFlow: Flow<HistoryListUiIntent>): Flow<HistoryListPartialChange> =
         merge(
@@ -100,7 +105,7 @@ private class HistoryListPartialChangeProducer(val type: Int) :
             .catch { HistoryListPartialChange.LoadMore.Failure(it) }
 
     private fun HistoryListUiIntent.Delete.producePartialChange() =
-        flow { emit(LitePal.deleteAll<History>("id = ?", "$id")) }
+        flow { emit(database.historyDao().deleteById(id)) }
             .flowOn(Dispatchers.IO)
             .map {
                 if (it > 0) HistoryListPartialChange.Delete.Success(id)

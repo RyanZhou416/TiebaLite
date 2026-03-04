@@ -1,24 +1,31 @@
-import com.android.build.gradle.internal.api.BaseVariantOutputImpl
+import java.util.Properties
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    autowire(libs.plugins.com.android.application)
-    autowire(libs.plugins.kotlin.android)
-    autowire(libs.plugins.kotlin.kapt)
-    autowire(libs.plugins.kotlin.serialization)
-    autowire(libs.plugins.kotlin.parcelize)
-    autowire(libs.plugins.hilt.android)
-    autowire(libs.plugins.kotlin.ksp)
-    autowire(libs.plugins.com.squareup.wire)
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.kotlin.parcelize)
+    alias(libs.plugins.hilt.android)
+    alias(libs.plugins.kotlin.ksp)
+    alias(libs.plugins.squareup.wire)
+}
+
+val appProps = Properties().apply {
+    rootProject.file("application.properties").takeIf { it.exists() }?.reader()?.use { load(it) }
+}
+val keystoreProps = Properties().apply {
+    rootProject.file("keystore.properties").takeIf { it.exists() }?.reader()?.use { load(it) }
 }
 
 val sha: String? = System.getenv("GITHUB_SHA")
 val isCI: String? = System.getenv("CI")
 val isSelfBuild = isCI.isNullOrEmpty() || !isCI.equals("true", ignoreCase = true)
-val applicationVersionCode = property.versionCode
-var applicationVersionName = property.versionName
-val isPerVersion = property.isPreRelease
+val applicationVersionCode = appProps.getProperty("versionCode", "1").toInt()
+var applicationVersionName = appProps.getProperty("versionName", "1.0.0")
+val isPerVersion = appProps.getProperty("isPreRelease", "false").toBoolean()
 if (isPerVersion) {
-    applicationVersionName += "-${property.preReleaseName}.${property.preReleaseVer}"
+    applicationVersionName += "-${appProps.getProperty("preReleaseName", "")}.${appProps.getProperty("preReleaseVer", "0")}"
 }
 if (!isSelfBuild && !sha.isNullOrEmpty()) {
     applicationVersionName += "+${sha.substring(0, 7)}"
@@ -34,14 +41,30 @@ wire {
     }
 }
 
+composeCompiler {
+    reportsDestination = layout.buildDirectory.dir("compose_metrics")
+    metricsDestination = layout.buildDirectory.dir("compose_metrics")
+    stabilityConfigurationFiles.add(rootProject.layout.projectDirectory.file("compose_stability_configuration.txt"))
+}
+
+ksp {
+    arg("compose-destinations.codeGenPackageName", "com.huanchengfly.tieba.post.ui.page")
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_17
+    }
+}
+
 android {
-    buildToolsVersion = "34.0.0"
-    compileSdk = 34
+    compileSdk = 36
     defaultConfig {
         applicationId = "com.huanchengfly.tieba.post"
-        minSdk = 21
+        minSdk = 23
         //noinspection OldTargetApi
-        targetSdk = 34
+        targetSdk = 36
         versionCode = applicationVersionCode
         versionName = applicationVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -52,14 +75,16 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     signingConfigs {
-        if (property.keystore.file.isNotBlank()) {
+        val ksFile = keystoreProps.getProperty("keystore.file", "")
+        if (ksFile.isNotBlank()) {
             create("config") {
-                storeFile = file(File(rootDir, property.keystore.file))
-                storePassword = property.keystore.password
-                keyAlias = property.keystore.key.alias
-                keyPassword = property.keystore.key.password
+                storeFile = file(File(rootDir, ksFile))
+                storePassword = keystoreProps.getProperty("keystore.password", "")
+                keyAlias = keystoreProps.getProperty("keystore.key.alias", "")
+                keyPassword = keystoreProps.getProperty("keystore.key.password", "")
                 enableV1Signing = true
                 enableV2Signing = true
                 enableV3Signing = true
@@ -86,27 +111,9 @@ android {
             multiDexEnabled = true
         }
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.8"
-    }
     compileOptions {
-        targetCompatibility = JavaVersion.VERSION_11
-        sourceCompatibility = JavaVersion.VERSION_11
-    }
-    kotlinOptions {
-        jvmTarget = "11"
-        freeCompilerArgs += listOf(
-            "-P",
-            "plugin:androidx.compose.compiler.plugins.kotlin:reportsDestination=" + project.buildDir.absolutePath + "/compose_metrics"
-        )
-        freeCompilerArgs += listOf(
-            "-P",
-            "plugin:androidx.compose.compiler.plugins.kotlin:metricsDestination=" + project.buildDir.absolutePath + "/compose_metrics"
-        )
-        freeCompilerArgs += listOf(
-            "-P", "plugin:androidx.compose.compiler.plugins.kotlin:stabilityConfigurationPath=" +
-                    project.rootDir.absolutePath + "/compose_stability_configuration.txt"
-        )
+        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_17
     }
     packaging {
         resources {
@@ -115,148 +122,124 @@ android {
         }
     }
     namespace = "com.huanchengfly.tieba.post"
-    applicationVariants.configureEach {
-        val variant = this
-        outputs.configureEach {
-            val fileName =
-                "${variant.buildType.name}-${applicationVersionName}(${applicationVersionCode}).apk"
-
-            (this as BaseVariantOutputImpl).outputFileName = fileName
-        }
-        kotlin.sourceSets {
-            getByName(variant.name) {
-                kotlin.srcDir("build/generated/ksp/${variant.name}/kotlin")
-            }
-        }
-    }
 }
 
 dependencies {
-    //Local Files
-//    implementation fileTree(include: ["*.jar"], dir: "libs")
+    implementation(libs.swiftzer.semver)
+    implementation(libs.godaddy.color.picker)
 
-    implementation(net.swiftzer.semver.semver)
-    implementation(godaddy.color.picker)
+    implementation(libs.airbnb.lottie)
+    implementation(libs.airbnb.lottie.compose)
 
-    implementation(airbnb.lottie)
-    implementation(airbnb.lottie.compose)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.collections.immutable)
 
-    implementation(kotlinx.serialization.json)
-    implementation(kotlinx.collections.immutable)
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui)
 
-    implementation(androidx.media3.exoplayer)
-    implementation(androidx.media3.ui)
+    implementation(libs.compose.destinations.core)
+    implementation(libs.compose.destinations.bottom.sheet)
+    ksp(libs.compose.destinations.ksp)
 
-    implementation(compose.destinations.core)
-    ksp(compose.destinations.ksp)
+    implementation(libs.androidx.navigation.compose)
 
-    implementation(androidx.navigation.compose)
+    api(libs.wire.runtime)
 
-    api(wire.runtime)
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
+    ksp(libs.androidx.hilt.compiler)
 
-    implementation(hilt.android)
-    kapt(hilt.compiler)
-    implementation(androidx.hilt.navigation.compose)
-    kapt(androidx.hilt.compiler)
+    implementation(libs.accompanist.drawablepainter)
 
-    implementation(accompanist.drawablepainter)
-    implementation(accompanist.insets.ui)
-    implementation(accompanist.systemuicontroller)
-    implementation(accompanist.placeholder.material)
+    implementation(libs.sketch.compose)
+    implementation(libs.sketch.ext.compose)
+    implementation(libs.sketch.animated.gif)
+    implementation(libs.sketch.animated.webp)
+    implementation(libs.sketch.animated.heif)
+    implementation(libs.sketch.http.okhttp)
+    implementation(libs.sketch.view)
 
-    implementation(sketch.core)
-    implementation(sketch.compose)
-    implementation(sketch.ext.compose)
-    implementation(sketch.gif)
-    implementation(sketch.okhttp)
+    implementation(libs.zoomimage.compose.sketch)
 
-    implementation(zoomimage.compose.sketch)
+    implementation(platform(libs.compose.bom))
+    androidTestImplementation(platform(libs.compose.bom))
 
-    implementation(compose.bom)
-    androidTestImplementation(compose.bom)
+    runtimeOnly(libs.compose.runtime.tracing)
+    implementation(libs.compose.animation)
+    implementation(libs.compose.animation.graphics)
+    implementation(libs.compose.material)
+    implementation(libs.compose.material.icons.core)
+    implementation(libs.compose.material.icons.extended)
+    implementation(libs.compose.ui.util)
 
-    runtimeOnly(compose.runtime.tracing)
-    implementation(compose.animation)
-    implementation(compose.animation.graphics)
-    implementation(compose.material)
-    implementation(compose.material.icons.core)
-    // Optional - Add full set of material icons
-    implementation(compose.material.icons.extended)
-    implementation(compose.ui.util)
-//    implementation "androidx.compose.material3:material3"
+    implementation(libs.compose.ui.tooling.preview)
+    debugImplementation(libs.compose.ui.tooling)
 
-    // Android Studio Preview support
-    implementation(compose.ui.tooling.preview)
-    debugImplementation(compose.ui.tooling)
+    androidTestImplementation(libs.compose.ui.test.junit4)
+    debugRuntimeOnly(libs.compose.ui.test.manifest)
 
-    // UI Tests
-    androidTestImplementation(compose.ui.test.junit4)
-    debugRuntimeOnly(compose.ui.test.manifest)
+    implementation(libs.androidx.constraintlayout.compose)
 
-    implementation(androidx.constraintlayout.compose)
+    implementation(libs.github.oaid)
 
-    implementation(github.oaid)
+    implementation(libs.jetbrains.annotations)
 
-    implementation(org.jetbrains.annotations)
+    implementation(libs.kotlin.reflect)
 
-    implementation(kotlin.stdlib)
-    implementation(kotlin.reflect)
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
 
-    implementation(kotlinx.coroutines.core)
-    implementation(kotlinx.coroutines.android)
+    implementation(libs.androidx.lifecycle.runtime)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
 
-    implementation(androidx.lifecycle.runtime)
-    implementation(androidx.lifecycle.viewmodel)
-    implementation(androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.activity)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.annotation)
+    implementation(libs.androidx.browser)
+    implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.core)
+    implementation(libs.androidx.core.splashscreen)
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.gridlayout)
+    implementation(libs.androidx.palette)
+    implementation(libs.androidx.window)
+    implementation(libs.androidx.startup.runtime)
 
-    //AndroidX
-    implementation(androidx.activity)
-    implementation(androidx.activity.compose)
-    implementation(androidx.appcompat)
-    implementation(androidx.annotation)
-    implementation(androidx.browser)
-    implementation(androidx.constraintlayout)
-    implementation(androidx.core)
-    implementation(androidx.core.splashscreen)
-    implementation(androidx.datastore.preferences)
-    implementation(androidx.gridlayout)
-    implementation(androidx.palette)
-    implementation(androidx.window)
-    implementation(androidx.startup.runtime)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.test.core)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.rules)
+    androidTestImplementation(libs.androidx.test.espresso.core)
+    androidTestRuntimeOnly(libs.androidx.test.runner)
 
-    //Test
-    testImplementation(junit.junit)
-    androidTestImplementation(androidx.test.core)
-    androidTestImplementation(androidx.test.ext.junit)
-    androidTestImplementation(androidx.test.rules)
-    androidTestImplementation(androidx.test.espresso.core)
-    androidTestRuntimeOnly(androidx.test.runner)
+    implementation(libs.glide.core)
+    ksp(libs.glide.ksp)
+    implementation(libs.glide.okhttp3.integration)
 
-    //Glide
-    implementation(glide.core)
-    ksp(glide.ksp)
-    implementation(glide.okhttp3.integration)
+    implementation(libs.google.material)
 
-    implementation(google.material)
+    implementation(libs.okhttp3.core)
+    implementation(libs.retrofit2.core)
+    implementation(libs.retrofit2.converter.wire)
 
-    implementation(okhttp3.core)
-    implementation(retrofit2.core)
-    implementation(retrofit2.converter.wire)
+    implementation(libs.google.gson)
 
-    implementation(google.gson)
-    implementation(org.litepal.android.kotlin)
-    implementation(com.jaredrummler.colorpicker)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.jaredrummler.colorpicker)
 
-    implementation(github.matisse)
-    implementation(xx.permissions)
-    implementation(com.gyf.immersionbar.immersionbar)
+    implementation(libs.github.matisse)
+    implementation(libs.xx.permissions)
+    implementation(libs.immersionbar)
 
-    implementation(com.github.yalantis.ucrop)
+    implementation(libs.ucrop)
 
-    implementation(com.jakewharton.butterknife)
-    kapt(com.jakewharton.butterknife.compiler)
-
-    implementation(appcenter.analytics)
-    implementation(appcenter.crashes)
-    implementation(appcenter.distribute)
+    implementation(libs.appcenter.analytics)
+    implementation(libs.appcenter.crashes)
+    implementation(libs.appcenter.distribute)
 }

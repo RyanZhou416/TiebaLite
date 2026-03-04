@@ -36,7 +36,7 @@ import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
-import androidx.compose.material.ripple.rememberRipple
+import androidx.compose.material.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -82,6 +82,7 @@ import com.huanchengfly.tieba.post.ui.widgets.compose.picker.ListSinglePicker
 import com.huanchengfly.tieba.post.ui.widgets.compose.rememberMenuState
 import com.huanchengfly.tieba.post.ui.widgets.compose.states.StateScreen
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -199,7 +200,7 @@ private fun SearchHistoryList(
 }
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalFoundationApi::class)
-@Destination
+@Destination<RootGraph>
 @Composable
 fun ForumSearchPostPage(
     forumName: String,
@@ -343,7 +344,7 @@ fun ForumSearchPostPage(
                                         .clip(RoundedCornerShape(100))
                                         .clickable(
                                             interactionSource = remember { MutableInteractionSource() },
-                                            indication = rememberRipple(bounded = false, 24.dp),
+                                            indication = ripple(bounded = false, radius = 24.dp),
                                             role = Role.Button,
                                             onClick = { navigator.navigateUp() }
                                         ),

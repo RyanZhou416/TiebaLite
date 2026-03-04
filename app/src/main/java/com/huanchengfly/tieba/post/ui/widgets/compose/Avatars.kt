@@ -21,13 +21,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.github.panpf.sketch.compose.AsyncImage
+import com.github.panpf.sketch.AsyncImage
 import com.github.panpf.sketch.fetch.newResourceUri
-import com.github.panpf.sketch.request.DisplayRequest
+import com.github.panpf.sketch.request.ComposableImageRequest
+import com.github.panpf.sketch.drawable.RealDrawableFetcher
+import com.github.panpf.sketch.state.DrawableStateImage
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
-import com.google.accompanist.placeholder.PlaceholderHighlight
-import com.google.accompanist.placeholder.material.fade
-import com.google.accompanist.placeholder.material.placeholder
 import com.huanchengfly.tieba.post.utils.ImageUtil
 
 object Sizes {
@@ -127,8 +126,8 @@ fun Avatar(
     val context = LocalContext.current
 
     AsyncImage(
-        request = DisplayRequest(LocalContext.current, data) {
-            placeholder(ImageUtil.getPlaceHolder(context, 0))
+        request = ComposableImageRequest(data) {
+            placeholder(DrawableStateImage(RealDrawableFetcher(ImageUtil.getPlaceHolder(context, 0))))
             crossfade()
         },
         contentDescription = contentDescription,
@@ -147,8 +146,8 @@ fun Avatar(
     val context = LocalContext.current
 
     AsyncImage(
-        request = DisplayRequest(LocalContext.current, newResourceUri(data)) {
-            placeholder(ImageUtil.getPlaceHolder(context, 0))
+        request = ComposableImageRequest(newResourceUri(data)) {
+            placeholder(DrawableStateImage(RealDrawableFetcher(ImageUtil.getPlaceHolder(context, 0))))
             crossfade()
         },
         contentDescription = contentDescription,

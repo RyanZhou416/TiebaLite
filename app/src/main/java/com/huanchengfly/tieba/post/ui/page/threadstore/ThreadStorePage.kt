@@ -68,14 +68,15 @@ import com.huanchengfly.tieba.post.ui.widgets.compose.states.StateScreen
 import com.huanchengfly.tieba.post.utils.StringUtil
 import com.huanchengfly.tieba.post.utils.StringUtil.getUsernameAnnotatedString
 import com.huanchengfly.tieba.post.utils.appPreferences
-import com.ramcosta.composedestinations.annotation.DeepLink
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootGraph
+import com.ramcosta.composedestinations.annotation.parameters.DeepLink
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
 private val UpdateTipTextStyle = TextStyle(fontWeight = FontWeight.Bold, fontSize = 10.sp)
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalTextApi::class)
-@Destination(
+@Destination<RootGraph>(
     deepLinks = [
         DeepLink(uriPattern = "tblite://favorite")
     ]

@@ -80,7 +80,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.widget.addTextChangedListener
-import com.github.panpf.sketch.compose.AsyncImage
+import com.github.panpf.sketch.AsyncImage
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.huanchengfly.tieba.post.R
 import com.huanchengfly.tieba.post.arch.GlobalEvent
@@ -117,8 +117,9 @@ import com.huanchengfly.tieba.post.utils.appPreferences
 import com.huanchengfly.tieba.post.utils.hideKeyboard
 import com.huanchengfly.tieba.post.utils.showKeyboard
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
-import com.ramcosta.composedestinations.spec.DestinationStyleBottomSheet
+import com.ramcosta.composedestinations.bottomsheet.spec.DestinationStyleBottomSheet
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.FlowPreview
@@ -126,12 +127,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.sample
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.litepal.LitePal
-import org.litepal.extension.deleteAllAsync
-import org.litepal.extension.findFirstAsync
+import kotlinx.coroutines.withContext
 import java.util.UUID
-import kotlin.concurrent.thread
 import kotlin.math.max
 
 data class ReplyArgs(
@@ -203,6 +202,7 @@ internal fun ReplyPageContent(
     }
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val draftDao = viewModel.database.draftDao()
     val curTbs = remember(tbs) { tbs ?: AccountUtil.getAccountInfo { this.tbs }.orEmpty() }
 
     val isUploading by viewModel.uiState.collectPartialAsState(
@@ -267,19 +267,19 @@ internal fun ReplyPageContent(
             .collect {
                 Log.i("ReplyPage", "collect: $it")
                 if (!replySuccess) {
-                    thread {
-                        Draft(hash, it).saveOrUpdate("hash = ?", hash)
+                    withContext(Dispatchers.IO) {
+                        draftDao.insertOrReplace(Draft(hash = hash, content = it))
                     }
                 }
             }
     }
     LaunchedEffect(Unit) {
-        LitePal.where("hash = ?", hash).findFirstAsync<Draft?>()
-            .listen {
-                if (it != null) {
-                    setText(it.content)
-                }
+        withContext(Dispatchers.IO) {
+            val draft = draftDao.getByHash(hash)
+            if (draft != null) {
+                setText(draft.content)
             }
+        }
     }
     val textLength by remember { derivedStateOf { curText.length } }
     val isTextEmpty by remember { derivedStateOf { curText.isEmpty() } }
@@ -290,7 +290,10 @@ internal fun ReplyPageContent(
         } else {
             context.toastShort(R.string.toast_reply_success, it.expInc)
         }
-        LitePal.deleteAllAsync<Draft>("hash = ?", hash).listen { onBack() }
+        coroutineScope.launch(Dispatchers.IO) {
+            draftDao.deleteByHash(hash)
+            launch(Dispatchers.Main) { onBack() }
+        }
     }
 
     var waitUploadSuccessToSend by remember { mutableStateOf(false) }
@@ -737,7 +740,7 @@ internal fun ReplyPageContent(
 }
 
 // TODO: 将软键盘状态相关逻辑抽离出来
-@Destination(style = DestinationStyleBottomSheet::class)
+@Destination<RootGraph>(style = DestinationStyleBottomSheet::class)
 @Composable
 fun ReplyPage(
     navigator: DestinationsNavigator,
@@ -843,7 +846,7 @@ private fun ImagePanel(
             itemsIndexed(selectedImages) { index, imageUri ->
                 Box {
                     AsyncImage(
-                        imageUri = imageUri,
+                        uri = imageUri,
                         contentDescription = stringResource(id = R.string.desc_image),
                         contentScale = ContentScale.Crop,
                         modifier = Modifier

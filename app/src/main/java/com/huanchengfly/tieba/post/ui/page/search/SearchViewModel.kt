@@ -13,7 +13,9 @@ import com.huanchengfly.tieba.post.arch.PartialChangeProducer
 import com.huanchengfly.tieba.post.arch.UiEvent
 import com.huanchengfly.tieba.post.arch.UiIntent
 import com.huanchengfly.tieba.post.arch.UiState
+import com.huanchengfly.tieba.post.models.database.AppDatabase
 import com.huanchengfly.tieba.post.models.database.SearchHistory
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -29,17 +31,16 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
-import org.litepal.LitePal
-import org.litepal.extension.delete
-import org.litepal.extension.deleteAll
-import org.litepal.extension.find
+import javax.inject.Inject
 
-class SearchViewModel :
-    BaseViewModel<SearchUiIntent, SearchPartialChange, SearchUiState, SearchUiEvent>() {
+@HiltViewModel
+class SearchViewModel @Inject constructor(
+    private val database: AppDatabase,
+) : BaseViewModel<SearchUiIntent, SearchPartialChange, SearchUiState, SearchUiEvent>() {
     override fun createInitialState() = SearchUiState()
 
     override fun createPartialChangeProducer(): PartialChangeProducer<SearchUiIntent, SearchPartialChange, SearchUiState> =
-        SearchPartialChangeProducer
+        SearchPartialChangeProducer(database)
 
     override fun dispatchEvent(partialChange: SearchPartialChange): UiEvent? =
         when (partialChange) {
@@ -60,8 +61,9 @@ class SearchViewModel :
             else -> null
         }
 
-    private object SearchPartialChangeProducer :
-        PartialChangeProducer<SearchUiIntent, SearchPartialChange, SearchUiState> {
+    private class SearchPartialChangeProducer(
+        private val database: AppDatabase,
+    ) : PartialChangeProducer<SearchUiIntent, SearchPartialChange, SearchUiState> {
         @OptIn(ExperimentalCoroutinesApi::class)
         override fun toPartialChangeFlow(intentFlow: Flow<SearchUiIntent>): Flow<SearchPartialChange> =
             merge(
@@ -80,16 +82,16 @@ class SearchViewModel :
         private fun produceInitPartialChange() = flow<SearchPartialChange.Init> {
             emit(
                 SearchPartialChange.Init.Success(
-                    LitePal.order("timestamp DESC").find<SearchHistory>()
+                    database.searchHistoryDao().getAllOrdered()
                 )
             )
         }.catch {
             emit(SearchPartialChange.Init.Failure(it.getErrorCode(), it.getErrorMessage()))
-        }
+        }.flowOn(Dispatchers.IO)
 
         private fun produceClearHistoryPartialChange() =
             flow<SearchPartialChange.ClearSearchHistory> {
-                LitePal.deleteAll<SearchHistory>()
+                database.searchHistoryDao().deleteAll()
                 emit(SearchPartialChange.ClearSearchHistory.Success)
             }.catch {
                 emit(SearchPartialChange.ClearSearchHistory.Failure(it.getErrorMessage()))
@@ -97,7 +99,7 @@ class SearchViewModel :
 
         private fun SearchUiIntent.DeleteSearchHistory.producePartialChange() =
             flow<SearchPartialChange.DeleteSearchHistory> {
-                LitePal.delete<SearchHistory>(id)
+                database.searchHistoryDao().deleteById(id)
                 emit(SearchPartialChange.DeleteSearchHistory.Success(id))
             }.catch {
                 emit(SearchPartialChange.DeleteSearchHistory.Failure(it.getErrorMessage()))
@@ -108,11 +110,12 @@ class SearchViewModel :
                 .onEach {
                     if (it.isNotBlank()) {
                         runCatching {
-                            SearchHistory(it).saveOrUpdate("content = ?", it)
+                            database.searchHistoryDao().insertOrReplace(SearchHistory(content = it))
                         }
                     }
                 }
                 .map { SearchPartialChange.SubmitKeyword(it) }
+                .flowOn(Dispatchers.IO)
 
         private fun SearchUiIntent.KeywordInputChanged.producePartialChange() =
             if (keyword.isNotBlank()) {

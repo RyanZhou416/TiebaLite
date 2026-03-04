@@ -12,10 +12,12 @@ import com.huanchengfly.tieba.post.arch.PartialChangeProducer
 import com.huanchengfly.tieba.post.arch.UiEvent
 import com.huanchengfly.tieba.post.arch.UiIntent
 import com.huanchengfly.tieba.post.arch.UiState
+import com.huanchengfly.tieba.post.models.database.AppDatabase
 import com.huanchengfly.tieba.post.models.database.History
 import com.huanchengfly.tieba.post.models.database.TopForum
 import com.huanchengfly.tieba.post.utils.AccountUtil
 import com.huanchengfly.tieba.post.utils.HistoryUtil
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -32,14 +34,17 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.zip
-import org.litepal.LitePal
+import javax.inject.Inject
 
 @Stable
-class HomeViewModel : BaseViewModel<HomeUiIntent, HomePartialChange, HomeUiState, HomeUiEvent>() {
+@HiltViewModel
+class HomeViewModel @Inject constructor(
+    private val database: AppDatabase,
+) : BaseViewModel<HomeUiIntent, HomePartialChange, HomeUiState, HomeUiEvent>() {
     override fun createInitialState(): HomeUiState = HomeUiState()
 
     override fun createPartialChangeProducer(): PartialChangeProducer<HomeUiIntent, HomePartialChange, HomeUiState> =
-        HomePartialChangeProducer
+        HomePartialChangeProducer(database)
 
     override fun dispatchEvent(partialChange: HomePartialChange): UiEvent? =
         when (partialChange) {
@@ -48,8 +53,9 @@ class HomeViewModel : BaseViewModel<HomeUiIntent, HomePartialChange, HomeUiState
             else -> null
         }
 
-    object HomePartialChangeProducer :
-        PartialChangeProducer<HomeUiIntent, HomePartialChange, HomeUiState> {
+    private class HomePartialChangeProducer(
+        private val database: AppDatabase,
+    ) : PartialChangeProducer<HomeUiIntent, HomePartialChange, HomeUiState> {
         @OptIn(ExperimentalCoroutinesApi::class)
         override fun toPartialChangeFlow(intentFlow: Flow<HomeUiIntent>): Flow<HomePartialChange> {
             return merge(
@@ -84,7 +90,7 @@ class HomeViewModel : BaseViewModel<HomeUiIntent, HomePartialChange, HomeUiState
                         )
                     } ?: emptyList()
                     val topForums = mutableListOf<HomeUiState.Forum>()
-                    val topForumsDB = LitePal.findAll(TopForum::class.java).map { it.forumId }
+                    val topForumsDB = database.topForumDao().getAll().map { it.forumId }
                     topForums.addAll(forums.filter { topForumsDB.contains(it.forumId) })
                     HomePartialChange.Refresh.Success(
                         forums,
@@ -103,7 +109,7 @@ class HomeViewModel : BaseViewModel<HomeUiIntent, HomePartialChange, HomeUiState
 
         private fun HomeUiIntent.TopForums.Delete.toPartialChangeFlow() =
             flow {
-                val deletedRows = LitePal.deleteAll(TopForum::class.java, "forumId = ?", forumId)
+                val deletedRows = database.topForumDao().deleteByForumId(forumId)
                 if (deletedRows > 0) {
                     emit(HomePartialChange.TopForums.Delete.Success(forumId))
                 } else {
@@ -113,13 +119,9 @@ class HomeViewModel : BaseViewModel<HomeUiIntent, HomePartialChange, HomeUiState
                 .catch { emit(HomePartialChange.TopForums.Delete.Failure(it.getErrorMessage())) }
 
         private fun HomeUiIntent.TopForums.Add.toPartialChangeFlow() =
-            flow {
-                val success = TopForum(forum.forumId).saveOrUpdate("forumId = ?", forum.forumId)
-                if (success) {
-                    emit(HomePartialChange.TopForums.Add.Success(forum))
-                } else {
-                    emit(HomePartialChange.TopForums.Add.Failure("未知错误"))
-                }
+            flow<HomePartialChange> {
+                database.topForumDao().insertOrReplace(TopForum(forumId = forum.forumId))
+                emit(HomePartialChange.TopForums.Add.Success(forum))
             }.flowOn(Dispatchers.IO)
                 .catch { emit(HomePartialChange.TopForums.Add.Failure(it.getErrorMessage())) }
 

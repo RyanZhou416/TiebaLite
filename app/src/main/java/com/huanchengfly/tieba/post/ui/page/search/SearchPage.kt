@@ -38,7 +38,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material.ripple.rememberRipple
+import androidx.compose.material.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
@@ -90,8 +90,9 @@ import com.huanchengfly.tieba.post.ui.widgets.compose.TabClickMenu
 import com.huanchengfly.tieba.post.ui.widgets.compose.TabRow
 import com.huanchengfly.tieba.post.ui.widgets.compose.TopAppBarContainer
 import com.huanchengfly.tieba.post.ui.widgets.compose.picker.ListSinglePicker
-import com.ramcosta.composedestinations.annotation.DeepLink
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootGraph
+import com.ramcosta.composedestinations.annotation.parameters.DeepLink
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
@@ -114,7 +115,7 @@ data class SearchPageItem(
 )
 
 @OptIn(ExperimentalFoundationApi::class, FlowPreview::class)
-@Destination(
+@Destination<RootGraph>(
     deepLinks = [
         DeepLink(uriPattern = "tblite://search")
     ]
@@ -329,7 +330,7 @@ private fun SearchSuggestionList(
             key = { it }
         ) {
             Container(
-                modifier = Modifier.animateItemPlacement()
+                modifier = Modifier.animateItem()
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -578,7 +579,7 @@ private fun SearchTopBar(
                     .clip(RoundedCornerShape(100))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
-                        indication = rememberRipple(bounded = false, 24.dp),
+                        indication = ripple(bounded = false, radius = 24.dp),
                         role = Role.Button,
                         onClick = onBack
                     ),

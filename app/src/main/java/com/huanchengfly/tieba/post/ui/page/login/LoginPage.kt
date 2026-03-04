@@ -58,6 +58,7 @@ import com.huanchengfly.tieba.post.utils.AccountUtil
 import com.huanchengfly.tieba.post.utils.AccountUtil.parseCookie
 import com.huanchengfly.tieba.post.utils.ClientUtils
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -73,7 +74,7 @@ const val LOGIN_URL =
     "https://wappass.baidu.com/passport?login&u=https%3A%2F%2Ftieba.baidu.com%2Findex%2Ftbwise%2Fmine"
 
 @SuppressLint("SetJavaScriptEnabled")
-@Destination
+@Destination<RootGraph>
 @Composable
 fun LoginPage(
     navigator: DestinationsNavigator,

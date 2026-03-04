@@ -8,6 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.onEach
@@ -43,21 +44,23 @@ abstract class BaseViewModel<
     protected abstract fun createInitialState(): State
     protected abstract fun createPartialChangeProducer(): PartialChangeProducer<Intent, PC, State>
 
-    val uiState = partialChangeProducer.toPartialChangeFlow(_intentFlow)
-        .onEach {
-            Log.i("ViewModel", "partialChange $it")
-            val event = dispatchEvent(it)
-            if (event != null) {
-                Log.i("ViewModel", "event $event")
-                _internalUiEventFlow.emit(event)
+    val uiState: StateFlow<State> by lazy {
+        partialChangeProducer.toPartialChangeFlow(_intentFlow)
+            .onEach {
+                Log.i("ViewModel", "partialChange $it")
+                val event = dispatchEvent(it)
+                if (event != null) {
+                    Log.i("ViewModel", "event $event")
+                    _internalUiEventFlow.emit(event)
+                }
             }
-        }
-        .scan(initialState) { oldState, partialChange ->
-            partialChange.reduce(oldState)
-        }
-        .distinctUntilChanged()
-        .flowOn(Dispatchers.IO)
-        .stateIn(viewModelScope, SharingStarted.Eagerly, initialState)
+            .scan(initialState) { oldState, partialChange ->
+                partialChange.reduce(oldState)
+            }
+            .distinctUntilChanged()
+            .flowOn(Dispatchers.IO)
+            .stateIn(viewModelScope, SharingStarted.Eagerly, initialState)
+    }
 
     protected open fun dispatchEvent(partialChange: PC): UiEvent? = null
 

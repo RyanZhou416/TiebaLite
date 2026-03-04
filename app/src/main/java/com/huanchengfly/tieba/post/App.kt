@@ -18,14 +18,12 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.ui.graphics.toArgb
 import com.github.gzuliyujiang.oaid.DeviceID
+import com.github.panpf.sketch.PlatformContext
+import com.github.panpf.sketch.SingletonSketch
 import com.github.panpf.sketch.Sketch
-import com.github.panpf.sketch.SketchFactory
-import com.github.panpf.sketch.decode.GifAnimatedDrawableDecoder
-import com.github.panpf.sketch.decode.GifMovieDrawableDecoder
-import com.github.panpf.sketch.decode.HeifAnimatedDrawableDecoder
-import com.github.panpf.sketch.decode.WebpAnimatedDrawableDecoder
+import com.github.panpf.sketch.fetch.OkHttpHttpUriFetcher
+import com.github.panpf.sketch.fetch.internal.OkHttpHttpUriFetcherProvider
 import com.github.panpf.sketch.http.OkHttpStack
-import com.github.panpf.sketch.request.PauseLoadWhenScrollingDrawableDecodeInterceptor
 import com.huanchengfly.tieba.post.activities.BaseActivity
 import com.huanchengfly.tieba.post.components.ClipBoardLinkDetector
 import com.huanchengfly.tieba.post.components.OAIDGetter
@@ -53,12 +51,21 @@ import com.microsoft.appcenter.distribute.UpdateAction
 import com.microsoft.appcenter.distribute.UpdateTrack
 import dagger.hilt.android.HiltAndroidApp
 import net.swiftzer.semver.SemVer
-import org.litepal.LitePal
-import kotlin.concurrent.thread
+import com.huanchengfly.tieba.post.models.database.AppDatabase
+import com.huanchengfly.tieba.post.utils.HistoryUtil
+import javax.inject.Inject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 
 @HiltAndroidApp
-class App : Application(), SketchFactory {
+class App : Application(), SingletonSketch.Factory {
+    @Inject
+    lateinit var database: AppDatabase
+
     private val mActivityList: MutableList<Activity> = mutableListOf()
 
     @RequiresApi(api = 28)
@@ -88,7 +95,9 @@ class App : Application(), SketchFactory {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             setWebViewPath(this)
         }
-        LitePal.initialize(this)
+        AccountUtil.initDao(database.accountDao())
+        HistoryUtil.initDao(database.historyDao())
+        BlockManager.initDao(database.blockDao())
         AccountUtil.init(this)
         Config.init(this)
         val isSelfBuild = applicationMetaData.getBoolean("is_self_build")
@@ -105,7 +114,7 @@ class App : Application(), SketchFactory {
         ThemeUtils.init(ThemeDelegate)
         registerActivityLifecycleCallbacks(ClipBoardLinkDetector)
         registerActivityLifecycleCallbacks(OAIDGetter)
-        thread {
+        appScope.launch(Dispatchers.IO) {
             BlockManager.init()
             EmoticonManager.init(this@App)
         }
@@ -115,9 +124,8 @@ class App : Application(), SketchFactory {
     @Keep
     fun mzNightModeUseOf(): Int = 2
 
-    //禁止app字体大小跟随系统字体大小调节
+    @Suppress("DEPRECATION")
     override fun getResources(): Resources {
-        //INSTANCE = this
         val fontScale = appPreferences.fontScale
         val resources = super.getResources()
         if (resources.configuration.fontScale != fontScale) {
@@ -126,6 +134,11 @@ class App : Application(), SketchFactory {
             resources.updateConfiguration(configuration, resources.displayMetrics)
         }
         return resources
+    }
+
+    override fun onTerminate() {
+        appScope.cancel()
+        super.onTerminate()
     }
 
     /**
@@ -223,11 +236,11 @@ class App : Application(), SketchFactory {
                     setTitle(activity.getString(R.string.title_dialog_update, versionName))
                     setMessage(releaseNotes)
                     setCancelable(!releaseDetails.isMandatoryUpdate)
-                    setPositiveButton(R.string.appcenter_distribute_update_dialog_download) { _, _ ->
+                    setPositiveButton(com.microsoft.appcenter.distribute.R.string.appcenter_distribute_update_dialog_download) { _, _ ->
                         Distribute.notifyUpdateAction(UpdateAction.UPDATE)
                     }
                     if (!releaseDetails.isMandatoryUpdate) {
-                        setNeutralButton(R.string.appcenter_distribute_update_dialog_postpone) { _, _ ->
+                        setNeutralButton(com.microsoft.appcenter.distribute.R.string.appcenter_distribute_update_dialog_postpone) { _, _ ->
                             Distribute.notifyUpdateAction(UpdateAction.POSTPONE)
                         }
                         setNegativeButton(R.string.button_next_time, null)
@@ -252,6 +265,9 @@ class App : Application(), SketchFactory {
         @JvmStatic
         lateinit var INSTANCE: App
             private set
+
+        @JvmStatic
+        val appScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
         val isInitialized: Boolean
             get() = this::INSTANCE.isInitialized
@@ -786,24 +802,13 @@ class App : Application(), SketchFactory {
         }
     }
 
-    override fun createSketch(): Sketch = Sketch.Builder(this).apply {
-        httpStack(OkHttpStack.Builder().apply {
-            userAgent(System.getProperty("http.agent"))
-        }.build())
-        components {
-            addDrawableDecodeInterceptor(PauseLoadWhenScrollingDrawableDecodeInterceptor())
-            addDrawableDecoder(
-                when {
-                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.P -> GifAnimatedDrawableDecoder.Factory()
-                    else -> GifMovieDrawableDecoder.Factory()
-                }
-            )
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                addDrawableDecoder(WebpAnimatedDrawableDecoder.Factory())
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                addDrawableDecoder(HeifAnimatedDrawableDecoder.Factory())
-            }
+    override fun createSketch(context: PlatformContext): Sketch = Sketch.Builder(context).apply {
+        addIgnoreFetcherProvider(OkHttpHttpUriFetcherProvider::class)
+        addComponents {
+            val httpStack = OkHttpStack.Builder().apply {
+                userAgent(System.getProperty("http.agent"))
+            }.build()
+            addFetcher(OkHttpHttpUriFetcher.Factory(httpStack))
         }
     }.build()
 }

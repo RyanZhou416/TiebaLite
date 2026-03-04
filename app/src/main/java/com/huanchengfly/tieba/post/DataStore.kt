@@ -15,7 +15,6 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.SharedPreferencesMigration
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
-import androidx.preference.PreferenceDataStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -132,180 +131,63 @@ fun DataStore<Preferences>.putInt(key: String, value: Int) {
 }
 
 fun DataStore<Preferences>.getInt(key: String, defaultValue: Int): Int {
-    var resultValue = defaultValue
-
-    runBlocking {
-        data.first {
-            resultValue = it[intPreferencesKey(key)] ?: resultValue
-            true
-        }
-    }
-
-    return resultValue
+    return runBlocking { data.first()[intPreferencesKey(key)] ?: defaultValue }
 }
 
 fun DataStore<Preferences>.getString(key: String): String? {
-    var resultValue: String? = null
-
-    runBlocking {
-        data.first {
-            resultValue = it[stringPreferencesKey(key)]
-            true
-        }
-    }
-
-    return resultValue
+    return runBlocking { data.first()[stringPreferencesKey(key)] }
 }
 
 fun DataStore<Preferences>.getString(key: String, defaultValue: String): String {
-    var resultValue = defaultValue
-
-    runBlocking {
-        data.first {
-            resultValue = it[stringPreferencesKey(key)] ?: resultValue
-            true
-        }
-    }
-
-    return resultValue
+    return runBlocking { data.first()[stringPreferencesKey(key)] ?: defaultValue }
 }
 
 fun DataStore<Preferences>.getStringSet(
     key: String,
     defaultValues: MutableSet<String>? = null
 ): MutableSet<String>? {
-    var resultValue = defaultValues
-
-    runBlocking {
-        data.first {
-            resultValue = it[stringSetPreferencesKey(key)]?.toMutableSet() ?: resultValue
-            true
-        }
-    }
-
-    return resultValue
+    return runBlocking { data.first()[stringSetPreferencesKey(key)]?.toMutableSet() ?: defaultValues }
 }
 
 fun DataStore<Preferences>.getBoolean(key: String, defaultValue: Boolean): Boolean {
-    var resultValue = defaultValue
-
-    runBlocking {
-        data.first {
-            resultValue = it[booleanPreferencesKey(key)] ?: resultValue
-            true
-        }
-    }
-
-    return resultValue
+    return runBlocking { data.first()[booleanPreferencesKey(key)] ?: defaultValue }
 }
 
 fun DataStore<Preferences>.getFloat(key: String, defaultValue: Float): Float {
-    var resultValue = defaultValue
-
-    runBlocking {
-        data.first {
-            resultValue = it[floatPreferencesKey(key)] ?: resultValue
-            true
-        }
-    }
-
-    return resultValue
+    return runBlocking { data.first()[floatPreferencesKey(key)] ?: defaultValue }
 }
 
 fun DataStore<Preferences>.getLong(key: String, defaultValue: Long): Long {
-    var resultValue = defaultValue
-
-    runBlocking {
-        data.first {
-            resultValue = it[longPreferencesKey(key)] ?: resultValue
-            true
-        }
-    }
-
-    return resultValue
+    return runBlocking { data.first()[longPreferencesKey(key)] ?: defaultValue }
 }
 
-class DataStorePreference : PreferenceDataStore() {
-    override fun putString(key: String, value: String?) {
-        MainScope().launch(Dispatchers.IO) {
-            App.INSTANCE.dataStore.edit {
-                if (value == null) {
-                    it.remove(stringPreferencesKey(key))
-                } else {
-                    it[stringPreferencesKey(key)] = value
-                }
-            }
-        }
-    }
+suspend fun DataStore<Preferences>.suspendGetInt(key: String, defaultValue: Int): Int {
+    return data.first()[intPreferencesKey(key)] ?: defaultValue
+}
 
-    override fun putStringSet(key: String, values: MutableSet<String>?) {
-        MainScope().launch(Dispatchers.IO) {
-            App.INSTANCE.dataStore.edit {
-                if (values == null) {
-                    it.remove(stringSetPreferencesKey(key))
-                } else {
-                    it[stringSetPreferencesKey(key)] = values
-                }
-            }
-        }
-    }
+suspend fun DataStore<Preferences>.suspendGetString(key: String): String? {
+    return data.first()[stringPreferencesKey(key)]
+}
 
-    override fun putInt(key: String, value: Int) {
-        MainScope().launch(Dispatchers.IO) {
-            App.INSTANCE.dataStore.edit {
-                it[intPreferencesKey(key)] = value
-            }
-        }
-    }
+suspend fun DataStore<Preferences>.suspendGetString(key: String, defaultValue: String): String {
+    return data.first()[stringPreferencesKey(key)] ?: defaultValue
+}
 
-    override fun putLong(key: String, value: Long) {
-        MainScope().launch(Dispatchers.IO) {
-            App.INSTANCE.dataStore.edit {
-                it[longPreferencesKey(key)] = value
-            }
-        }
-    }
+suspend fun DataStore<Preferences>.suspendGetStringSet(
+    key: String,
+    defaultValues: MutableSet<String>? = null
+): MutableSet<String>? {
+    return data.first()[stringSetPreferencesKey(key)]?.toMutableSet() ?: defaultValues
+}
 
-    override fun putFloat(key: String, value: Float) {
-        MainScope().launch(Dispatchers.IO) {
-            App.INSTANCE.dataStore.edit {
-                it[floatPreferencesKey(key)] = value
-            }
-        }
-    }
+suspend fun DataStore<Preferences>.suspendGetBoolean(key: String, defaultValue: Boolean): Boolean {
+    return data.first()[booleanPreferencesKey(key)] ?: defaultValue
+}
 
-    override fun putBoolean(key: String, value: Boolean) {
-        MainScope().launch(Dispatchers.IO) {
-            App.INSTANCE.dataStore.edit {
-                it[booleanPreferencesKey(key)] = value
-            }
-        }
-    }
+suspend fun DataStore<Preferences>.suspendGetFloat(key: String, defaultValue: Float): Float {
+    return data.first()[floatPreferencesKey(key)] ?: defaultValue
+}
 
-    override fun getString(key: String, defValue: String?): String? {
-        return App.INSTANCE.dataStore.getString(key) ?: defValue
-    }
-
-    override fun getStringSet(
-        key: String,
-        defValues: MutableSet<String>?
-    ): MutableSet<String>? {
-        return App.INSTANCE.dataStore.getStringSet(key, defValues)
-    }
-
-    override fun getInt(key: String, defValue: Int): Int {
-        return App.INSTANCE.dataStore.getInt(key, defValue)
-    }
-
-    override fun getLong(key: String, defValue: Long): Long {
-        return App.INSTANCE.dataStore.getLong(key, defValue)
-    }
-
-    override fun getFloat(key: String, defValue: Float): Float {
-        return App.INSTANCE.dataStore.getFloat(key, defValue)
-    }
-
-    override fun getBoolean(key: String, defValue: Boolean): Boolean {
-        return App.INSTANCE.dataStore.getBoolean(key, defValue)
-    }
+suspend fun DataStore<Preferences>.suspendGetLong(key: String, defaultValue: Long): Long {
+    return data.first()[longPreferencesKey(key)] ?: defaultValue
 }

@@ -108,6 +108,7 @@ import com.huanchengfly.tieba.post.utils.StringUtil
 import com.huanchengfly.tieba.post.utils.StringUtil.getShortNumString
 import com.huanchengfly.tieba.post.utils.TiebaUtil
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
@@ -117,7 +118,7 @@ import kotlin.math.absoluteValue
 import kotlin.math.max
 import kotlin.math.min
 
-@Destination
+@Destination<RootGraph>
 @Composable
 fun UserProfilePage(
     uid: Long,

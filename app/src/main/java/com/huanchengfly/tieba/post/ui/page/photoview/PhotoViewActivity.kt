@@ -39,10 +39,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.github.panpf.sketch.compose.rememberAsyncImageState
+import com.github.panpf.sketch.rememberAsyncImageState
 import com.github.panpf.sketch.request.LoadState
 import com.github.panpf.zoomimage.SketchZoomAsyncImage
-import com.google.accompanist.systemuicontroller.SystemUiController
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.huanchengfly.tieba.post.R
 import com.huanchengfly.tieba.post.arch.BaseComposeActivityWithParcelable
 import com.huanchengfly.tieba.post.models.PhotoViewData
@@ -77,11 +79,11 @@ private fun ViewPhoto(
             }
         }
         SketchZoomAsyncImage(
-            imageUri = imageUri,
+            uri = imageUri,
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
             onTap = onTap,
-            imageState = state,
+            state = state,
         )
         if (showProgress) {
             Box(
@@ -252,8 +254,11 @@ class PhotoViewActivity : BaseComposeActivityWithParcelable<PhotoViewData>() {
         }
     }
 
-    override fun onCreateContent(systemUiController: SystemUiController) {
-        systemUiController.isSystemBarsVisible = false
+    override fun onCreateContent() {
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            hide(WindowInsetsCompat.Type.systemBars())
+            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {

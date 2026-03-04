@@ -4,9 +4,10 @@ import android.content.Context
 import android.os.Looper
 import android.text.TextUtils
 import com.github.panpf.sketch.sketch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.math.BigDecimal
-import kotlin.concurrent.thread
 
 /**
  * 图片缓存工具类
@@ -18,27 +19,14 @@ object ImageCacheUtil {
     /**
      * 清除图片磁盘缓存
      */
-    fun clearImageDiskCache(context: Context) {
-        try {
-            if (Looper.myLooper() == Looper.getMainLooper()) {
-                thread {
-                    context.sketch
-                        .downloadCache
-                        .clear()
-                    context.sketch
-                        .resultCache
-                        .clear()
-                }
-            } else {
-                context.sketch
-                    .downloadCache
-                    .clear()
-                context.sketch
-                    .resultCache
-                    .clear()
+    suspend fun clearImageDiskCache(context: Context) {
+        withContext(Dispatchers.IO) {
+            try {
+                context.sketch.downloadCache.clear()
+                context.sketch.resultCache.clear()
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
     }
 
@@ -60,7 +48,7 @@ object ImageCacheUtil {
     /**
      * 清除图片所有缓存
      */
-    fun clearImageAllCache(context: Context) {
+    suspend fun clearImageAllCache(context: Context) {
         clearImageDiskCache(context)
         clearImageMemoryCache(context)
         val imageExternalCacheDir =

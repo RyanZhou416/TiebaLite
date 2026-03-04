@@ -77,9 +77,9 @@ inline fun <reified Data> File.fromJson(): Data {
 
 fun Any.toJson(): String = Gson().toJson(this)
 
-fun String.toMD5(): String = MD5Util.toMd5(this)
+fun String.toMD5(): String = MD5Util.toMd5(this) ?: ""
 
-fun ByteArray.toMD5(): String = MD5Util.toMd5(this)
+fun ByteArray.toMD5(): String = MD5Util.toMd5(this) ?: ""
 
 fun Context.getColorCompat(@ColorRes id: Int): Int {
     return ContextCompat.getColor(this, id)

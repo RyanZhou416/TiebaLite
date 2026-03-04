@@ -1,16 +1,19 @@
 package com.huanchengfly.tieba.post.models.database
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import com.huanchengfly.tieba.post.fromJson
-import org.litepal.crud.LitePalSupport
 
-data class Block @JvmOverloads constructor(
+@Entity(tableName = "block")
+data class Block(
     val category: Int = 0,
     val type: Int = 0,
     val keywords: String? = null,
     val username: String? = null,
     val uid: String? = null,
-) : LitePalSupport() {
-    val id: Long = 0L
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0L,
+) {
     companion object {
         const val CATEGORY_BLACK_LIST = 10
         const val CATEGORY_WHITE_LIST = 11

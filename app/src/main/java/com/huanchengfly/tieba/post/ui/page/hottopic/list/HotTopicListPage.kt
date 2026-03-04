@@ -35,7 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.accompanist.insets.ui.Scaffold
+import androidx.compose.material.Scaffold
 import com.huanchengfly.tieba.post.R
 import com.huanchengfly.tieba.post.api.models.protos.topicList.NewTopicList
 import com.huanchengfly.tieba.post.arch.collectPartialAsState
@@ -54,6 +54,7 @@ import com.huanchengfly.tieba.post.ui.widgets.compose.Sizes
 import com.huanchengfly.tieba.post.ui.widgets.compose.TitleCentredToolbar
 import com.huanchengfly.tieba.post.utils.StringUtil.getShortNumString
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
 @Composable
@@ -155,7 +156,7 @@ private fun TopicBody(
 }
 
 @OptIn(ExperimentalMaterialApi::class)
-@Destination
+@Destination<RootGraph>
 @Composable
 fun HotTopicListPage(
     viewModel: HotTopicListViewModel = pageViewModel<HotTopicListUiIntent, HotTopicListViewModel>(

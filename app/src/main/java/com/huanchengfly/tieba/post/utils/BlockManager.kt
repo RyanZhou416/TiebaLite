@@ -1,5 +1,6 @@
 package com.huanchengfly.tieba.post.utils
 
+import com.huanchengfly.tieba.post.App
 import com.huanchengfly.tieba.post.api.models.MessageListBean
 import com.huanchengfly.tieba.post.api.models.protos.Post
 import com.huanchengfly.tieba.post.api.models.protos.SubPostList
@@ -8,45 +9,64 @@ import com.huanchengfly.tieba.post.api.models.protos.abstractText
 import com.huanchengfly.tieba.post.api.models.protos.plainText
 import com.huanchengfly.tieba.post.models.database.Block
 import com.huanchengfly.tieba.post.models.database.Block.Companion.getKeywords
-import org.litepal.LitePal
-import org.litepal.extension.delete
-import org.litepal.extension.findAllAsync
+import com.huanchengfly.tieba.post.models.database.dao.BlockDao
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 object BlockManager {
     private val blockList: MutableList<Block> = mutableListOf()
+    private val blockListLock = Any()
+
+    lateinit var blockDao: BlockDao
+        private set
+
+    fun initDao(dao: BlockDao) {
+        blockDao = dao
+    }
 
     val blackList: List<Block>
-        get() = blockList.filter { it.category == Block.CATEGORY_BLACK_LIST }
+        get() = getBlockSnapshot().filter { it.category == Block.CATEGORY_BLACK_LIST }
 
     val whiteList: List<Block>
-        get() = blockList.filter { it.category == Block.CATEGORY_WHITE_LIST }
+        get() = getBlockSnapshot().filter { it.category == Block.CATEGORY_WHITE_LIST }
 
-    fun addBlock(block: Block) {
-        block.save()
-        blockList.add(block)
+    suspend fun addBlock(block: Block) {
+        blockDao.insert(block)
+        synchronized(blockListLock) {
+            blockList.add(block)
+        }
     }
 
     fun addBlockAsync(
         block: Block,
         callback: ((Boolean) -> Unit)? = null,
     ) {
-        block.saveAsync()
-            .listen {
-                callback?.invoke(it)
-                blockList.add(block)
+        App.appScope.launch(Dispatchers.IO) {
+            runCatching {
+                addBlock(block)
+                callback?.invoke(true)
+            }.onFailure {
+                callback?.invoke(false)
             }
+        }
     }
 
-    fun removeBlock(id: Long) {
-        LitePal.delete<Block>(id)
-        blockList.removeAll { it.id == id }
+    suspend fun removeBlock(id: Long) {
+        blockDao.deleteById(id)
+        synchronized(blockListLock) {
+            blockList.removeAll { it.id == id }
+        }
     }
 
-    fun init() {
-        LitePal.findAllAsync<Block>().listen { blocks ->
+    suspend fun init() {
+        val blocks = blockDao.getAll()
+        synchronized(blockListLock) {
+            blockList.clear()
             blockList.addAll(blocks)
         }
     }
+
+    private fun getBlockSnapshot(): List<Block> = synchronized(blockListLock) { blockList.toList() }
 
     fun shouldBlock(content: String): Boolean {
         return blackList.any { block ->

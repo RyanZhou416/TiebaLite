@@ -50,10 +50,11 @@ import com.huanchengfly.tieba.post.utils.TiebaUtil
 import com.huanchengfly.tieba.post.utils.appPreferences
 import com.huanchengfly.tieba.post.utils.launchUrl
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class)
-@Destination
+@Destination<RootGraph>
 @Composable
 fun AccountManagePage(
     navigator: DestinationsNavigator,

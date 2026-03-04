@@ -86,13 +86,14 @@ import com.huanchengfly.tieba.post.utils.StringUtil
 import com.huanchengfly.tieba.post.utils.TiebaUtil
 import com.huanchengfly.tieba.post.utils.appPreferences
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
-import com.ramcosta.composedestinations.spec.DestinationStyleBottomSheet
+import com.ramcosta.composedestinations.bottomsheet.spec.DestinationStyleBottomSheet
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@Destination
+@Destination<RootGraph>
 @Composable
 fun SubPostsPage(
     navigator: DestinationsNavigator,
@@ -116,7 +117,7 @@ fun SubPostsPage(
     }
 }
 
-@Destination(
+@Destination<RootGraph>(
     style = DestinationStyleBottomSheet::class
 )
 @Composable

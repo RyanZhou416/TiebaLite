@@ -124,7 +124,7 @@ object PickMediasContract : ActivityResultContract<PickMediasRequest, PickMedias
         }
         Matisse.from(context as Activity)
             .choose(mimeType)
-            .theme(if (ThemeUtil.isNightMode()) R.style.Matisse_Dracula else R.style.Matisse_Zhihu)
+            .theme(if (ThemeUtil.isNightMode()) com.zhihu.matisse.R.style.Matisse_Dracula else com.zhihu.matisse.R.style.Matisse_Zhihu)
             .countable(input.maxItems > 1)
             .maxSelectable(input.maxItems)
             .imageEngine(GlideEngine())

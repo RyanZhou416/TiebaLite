@@ -17,10 +17,11 @@ import androidx.compose.ui.unit.dp
 import com.huanchengfly.tieba.post.ui.common.theme.compose.TonalPalette
 import com.huanchengfly.tieba.post.ui.common.theme.compose.dynamicTonalPalette
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootGraph
 import kotlinx.collections.immutable.toImmutableList
 import kotlin.reflect.full.declaredMemberProperties
 
-@Destination
+@Destination<RootGraph>
 @Composable
 fun MonetTestPage() {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {

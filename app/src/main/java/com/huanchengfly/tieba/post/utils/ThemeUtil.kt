@@ -18,9 +18,10 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.github.panpf.sketch.asDrawable
 import com.github.panpf.sketch.fetch.newFileUri
-import com.github.panpf.sketch.request.DisplayRequest
-import com.github.panpf.sketch.request.DisplayResult
+import com.github.panpf.sketch.request.ImageRequest
+import com.github.panpf.sketch.request.ImageResult
 import com.github.panpf.sketch.request.execute
 import com.github.panpf.sketch.resize.Scale
 import com.google.android.material.appbar.AppBarLayout
@@ -85,12 +86,12 @@ object ThemeUtil {
     val dataStore: DataStore<Preferences>
         get() = INSTANCE.dataStore
 
-    fun getTextColor(context: Context?): Int {
+    fun getTextColor(context: Context): Int {
         return ThemeUtils.getColorByAttr(context, R.attr.colorText)
     }
 
     @JvmStatic
-    fun getSecondaryTextColor(context: Context?): Int {
+    fun getSecondaryTextColor(context: Context): Int {
         return ThemeUtils.getColorByAttr(context, R.attr.colorTextSecondary)
     }
 
@@ -103,7 +104,7 @@ object ThemeUtil {
             activity.refreshUIIfNeed()
             return
         }
-        ThemeUtils.refreshUI(activity)
+        activity?.let { ThemeUtils.refreshUI(it) }
     }
 
     private fun getOldTheme(): String {
@@ -363,14 +364,15 @@ object ThemeUtil {
             return
         }
         activity.launch {
-            val result = DisplayRequest(activity, newFileUri(backgroundFilePath)) {
-                resizeScale(Scale.CENTER_CROP)
+            val result = ImageRequest(activity, newFileUri(backgroundFilePath)) {
+                scale(Scale.CENTER_CROP)
             }.execute()
-            if (result is DisplayResult.Success) {
+            if (result is ImageResult.Success) {
+                val drawable = result.image.asDrawable()
                 if (useCache) {
-                    translucentBackground = result.drawable
+                    translucentBackground = drawable
                 }
-                view.background = result.drawable
+                view.background = drawable
             } else {
                 view.setBackgroundColor(Color.BLACK)
             }

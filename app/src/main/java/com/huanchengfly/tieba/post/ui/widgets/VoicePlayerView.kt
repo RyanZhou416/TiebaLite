@@ -124,7 +124,7 @@ class VoicePlayerView @JvmOverloads constructor(
         icon = findViewById(R.id.audio_play_icon)
         animationView = findViewById<LottieAnimationView>(R.id.audio_wave_anim).apply {
             val colorRes: Int = R.color.default_color_primary
-            val csl = ColorStateListUtils.createColorStateList(context, colorRes)
+            val csl = ColorStateListUtils.createColorStateList(context, colorRes)!!
             val filter = SimpleColorFilter(csl.defaultColor)
             val keyPath = KeyPath("**")
             val callback = LottieValueCallback<ColorFilter>(filter)

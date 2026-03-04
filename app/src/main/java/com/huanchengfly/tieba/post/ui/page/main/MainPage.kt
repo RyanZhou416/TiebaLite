@@ -48,7 +48,7 @@ import com.huanchengfly.tieba.post.ui.widgets.compose.LazyLoadHorizontalPager
 import com.huanchengfly.tieba.post.ui.widgets.compose.MyScaffold
 import com.huanchengfly.tieba.post.utils.appPreferences
 import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootNavGraph
+import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
@@ -92,8 +92,7 @@ private fun NavigationWrapper(
 }
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalAnimationGraphicsApi::class)
-@RootNavGraph(start = true)
-@Destination
+@Destination<RootGraph>(start = true)
 @Composable
 fun MainPage(
     navigator: DestinationsNavigator,

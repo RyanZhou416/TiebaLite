@@ -40,12 +40,14 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.util.lerp
-import com.github.panpf.sketch.compose.AsyncImage
-import com.github.panpf.sketch.compose.rememberAsyncImageState
+import com.github.panpf.sketch.AsyncImage
+import com.github.panpf.sketch.rememberAsyncImageState
+import com.github.panpf.sketch.request.ComposableImageRequest
 import com.github.panpf.sketch.request.Depth
-import com.github.panpf.sketch.request.DisplayRequest
-import com.github.panpf.sketch.request.DisplayResult
-import com.github.panpf.sketch.stateimage.ThumbnailMemoryCacheStateImage
+import com.github.panpf.sketch.request.ImageResult
+import com.github.panpf.sketch.drawable.RealDrawableFetcher
+import com.github.panpf.sketch.state.DrawableStateImage
+import com.github.panpf.sketch.state.ThumbnailMemoryCacheStateImage
 import com.github.panpf.sketch.transform.MaskTransformation
 import com.huanchengfly.tieba.post.App
 import com.huanchengfly.tieba.post.arch.BaseComposeActivity.Companion.LocalWindowSizeClass
@@ -146,76 +148,70 @@ private fun PreviewImage(
                 with(density) { layoutHeightPx.toDp() }
             }
 
-            val request = remember(imageUri) {
-                DisplayRequest(context, imageUri)
-            }
+                    val originRequest = ComposableImageRequest(originImageUri ?: imageUri) {
+                        placeholder(ThumbnailMemoryCacheStateImage(imageUri))
+                        crossfade(fadeStart = false)
+                    }
 
-            val originRequest = remember(imageUri, originImageUri) {
-                DisplayRequest(context, originImageUri ?: imageUri) {
-                    placeholder(ThumbnailMemoryCacheStateImage(imageUri))
-                    crossfade(fadeStart = false)
-                }
-            }
-
-            Box(
-                modifier = Modifier
-                    .fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Box(
-                    modifier = Modifier
-                        .width(
-                            lerp(layoutWidthDp, previewImageWidthDp, animProgress.value)
-                        )
-                        .height(
-                            lerp(layoutHeightDp, previewImageHeightDp, animProgress.value)
-                        )
-                        .absoluteOffset {
-                            val layoutOffset = layoutOffsetProvider()
-                            val currentLayoutWidthPx = lerp(
-                                layoutWidthPx.toFloat(),
-                                previewImageWidthPx,
-                                animProgress.value
-                            )
-                            val currentLayoutHeightPx = lerp(
-                                layoutHeightPx.toFloat(),
-                                previewImageHeightPx,
-                                animProgress.value
-                            )
-                            IntOffset(
-                                lerp(
-                                    layoutOffset.x - (screenCenterX - currentLayoutWidthPx / 2),
-                                    0f,
-                                    animProgress.value
-                                ).toInt(),
-                                lerp(
-                                    layoutOffset.y - (screenCenterY - currentLayoutHeightPx / 2 + statusBarHeight / 2),
-                                    0f,
-                                    animProgress.value
-                                ).toInt()
-                            )
-                        }
-                        .clip(RoundedCornerShape(6.dp))
-                ) {
-                    AsyncImage(
-                        request = request,
-                        contentDescription = null,
+                    Box(
                         modifier = Modifier
                             .fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-
-                    if (originImageUri != null && animProgress.value >= 1f) {
-                        AsyncImage(
-                            request = originRequest,
-                            contentDescription = null,
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
                             modifier = Modifier
-                                .fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
+                                .width(
+                                    lerp(layoutWidthDp, previewImageWidthDp, animProgress.value)
+                                )
+                                .height(
+                                    lerp(layoutHeightDp, previewImageHeightDp, animProgress.value)
+                                )
+                                .absoluteOffset {
+                                    val layoutOffset = layoutOffsetProvider()
+                                    val currentLayoutWidthPx = lerp(
+                                        layoutWidthPx.toFloat(),
+                                        previewImageWidthPx,
+                                        animProgress.value
+                                    )
+                                    val currentLayoutHeightPx = lerp(
+                                        layoutHeightPx.toFloat(),
+                                        previewImageHeightPx,
+                                        animProgress.value
+                                    )
+                                    IntOffset(
+                                        lerp(
+                                            layoutOffset.x - (screenCenterX - currentLayoutWidthPx / 2),
+                                            0f,
+                                            animProgress.value
+                                        ).toInt(),
+                                        lerp(
+                                            layoutOffset.y - (screenCenterY - currentLayoutHeightPx / 2 + statusBarHeight / 2),
+                                            0f,
+                                            animProgress.value
+                                        ).toInt()
+                                    )
+                                }
+                                .clip(RoundedCornerShape(6.dp))
+                        ) {
+                            AsyncImage(
+                                uri = imageUri,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+
+                            if (originImageUri != null && animProgress.value >= 1f) {
+                                AsyncImage(
+                                    request = originRequest,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                        }
                     }
-                }
-            }
         }
     }
 }
@@ -244,16 +240,14 @@ fun NetworkImage(
 
     var layoutOffset by remember { mutableStateOf(Offset.Zero) }
 
-    val request = remember(imageUri, shouldLoad, colorMask) {
-        DisplayRequest(context, imageUri) {
-            placeholder(ImageUtil.getPlaceHolder(context, 0))
-            crossfade()
-            if (!shouldLoad) {
-                depth(Depth.LOCAL)
-            }
-            if (colorMask != null) {
-                transformations(colorMask)
-            }
+    val request = ComposableImageRequest(imageUri) {
+        placeholder(DrawableStateImage(RealDrawableFetcher(ImageUtil.getPlaceHolder(context, 0))))
+        crossfade()
+        if (!shouldLoad) {
+            depth(Depth.LOCAL)
+        }
+        if (colorMask != null) {
+            transformations(colorMask)
         }
     }
 
@@ -261,7 +255,7 @@ fun NetworkImage(
     val imageAspectRatio by remember {
         derivedStateOf {
             with(state.result) {
-                if (this is DisplayResult.Success) imageInfo.height.toFloat() / imageInfo.width
+                if (this is ImageResult.Success) imageInfo.height.toFloat() / imageInfo.width
                 else 0f
             }
         }

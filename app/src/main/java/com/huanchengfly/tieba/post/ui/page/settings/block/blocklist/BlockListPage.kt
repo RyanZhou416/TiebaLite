@@ -41,7 +41,7 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.accompanist.placeholder.material.placeholder
+import com.huanchengfly.tieba.post.ui.widgets.compose.placeholder
 import com.google.gson.reflect.TypeToken
 import com.huanchengfly.tieba.post.R
 import com.huanchengfly.tieba.post.arch.collectPartialAsState
@@ -63,11 +63,12 @@ import com.huanchengfly.tieba.post.ui.widgets.compose.rememberDialogState
 import com.huanchengfly.tieba.post.ui.widgets.compose.states.StateScreen
 import com.huanchengfly.tieba.post.utils.GsonUtil
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
-@Destination
+@Destination<RootGraph>
 @Composable
 fun BlockListPage(
     viewModel: BlockListViewModel = pageViewModel<BlockListUiIntent, BlockListViewModel>(

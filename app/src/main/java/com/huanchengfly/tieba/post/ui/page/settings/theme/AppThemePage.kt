@@ -61,7 +61,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.toColorInt
 import androidx.datastore.preferences.core.booleanPreferencesKey
-import com.github.panpf.sketch.compose.AsyncImage
+import com.github.panpf.sketch.AsyncImage
 import com.github.panpf.sketch.fetch.newFileUri
 import com.github.panpf.sketch.fetch.newResourceUri
 import com.godaddy.android.colorpicker.HsvColor
@@ -88,9 +88,10 @@ import com.huanchengfly.tieba.post.utils.ThemeUtil
 import com.huanchengfly.tieba.post.utils.appPreferences
 import com.huanchengfly.tieba.post.utils.extension.toHexString
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
-@Destination
+@Destination<RootGraph>
 @Composable
 fun AppThemePage(
     navigator: DestinationsNavigator,
@@ -427,7 +428,7 @@ fun AppThemePage(
                                         newResourceUri(R.drawable.user_header)
                                     }
                                 AsyncImage(
-                                    imageUri = previewImageUri,
+                                    uri = previewImageUri,
                                     contentDescription = null,
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier.fillMaxSize()

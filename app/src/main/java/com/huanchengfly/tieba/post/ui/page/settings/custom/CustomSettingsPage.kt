@@ -53,11 +53,12 @@ import com.huanchengfly.tieba.post.utils.AppIconUtil
 import com.huanchengfly.tieba.post.utils.LauncherIcons
 import com.huanchengfly.tieba.post.utils.ThemeUtil
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.collections.immutable.persistentListOf
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class)
-@Destination
+@Destination<RootGraph>
 @Composable
 fun CustomSettingsPage(
     navigator: DestinationsNavigator

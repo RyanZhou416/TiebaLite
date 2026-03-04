@@ -61,10 +61,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
-import com.google.accompanist.placeholder.PlaceholderHighlight
-import com.google.accompanist.placeholder.material.fade
-import com.google.accompanist.placeholder.material.placeholder
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.huanchengfly.tieba.post.App
 import com.huanchengfly.tieba.post.R
 import com.huanchengfly.tieba.post.api.models.protos.Media
@@ -972,15 +972,23 @@ fun VideoPlayer(
     title: String = "",
 ) {
     val context = LocalContext.current
-    val systemUiController = rememberSystemUiController()
+    val view = LocalView.current
+    val windowInsetsController = remember(view) {
+        val window = (view.context as android.app.Activity).window
+        WindowInsetsControllerCompat(window, view)
+    }
     val videoPlayerController = rememberVideoPlayerController(
         source = VideoPlayerSource.Network(videoUrl),
         thumbnailUrl = thumbnailUrl,
         fullScreenModeChangedListener = object : OnFullScreenModeChangedListener {
             override fun onFullScreenModeChanged(isFullScreen: Boolean) {
                 Log.i("VideoPlayer", "onFullScreenModeChanged $isFullScreen")
-                systemUiController.isStatusBarVisible = !isFullScreen
-                systemUiController.isNavigationBarVisible = !isFullScreen
+                if (isFullScreen) {
+                    windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
+                    windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                } else {
+                    windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
+                }
                 if (isFullScreen) {
                     context.findActivity()?.requestedOrientation =
                         ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE

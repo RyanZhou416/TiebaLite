@@ -44,6 +44,7 @@ import com.huanchengfly.tieba.post.ui.widgets.compose.TitleCentredToolbar
 import com.huanchengfly.tieba.post.utils.AccountUtil.LocalAccount
 import com.huanchengfly.tieba.post.utils.StringUtil
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
 @Composable
@@ -103,7 +104,7 @@ fun NowAccountItem(
 }
 
 @OptIn(ExperimentalMaterialApi::class)
-@Destination
+@Destination<RootGraph>
 @Composable
 fun SettingsPage(
     navigator: DestinationsNavigator,

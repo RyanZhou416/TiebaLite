@@ -4,9 +4,9 @@ import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.app.Activity
 import android.app.Dialog
+import android.content.Context
 import android.content.res.ColorStateList
 import android.content.res.Configuration
-import android.content.res.Resources
 import android.graphics.Color
 import android.os.Bundle
 import android.text.TextUtils
@@ -24,7 +24,6 @@ import androidx.annotation.Keep
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import butterknife.ButterKnife
 import com.gyf.immersionbar.ImmersionBar
 import com.huanchengfly.tieba.post.App
 import com.huanchengfly.tieba.post.App.Companion.INSTANCE
@@ -59,21 +58,21 @@ abstract class BaseActivity : AppCompatActivity(), ExtraRefreshable, CoroutineSc
 
     val appPreferences: AppPreferencesUtils by lazy { AppPreferencesUtils.getInstance(this) }
 
+    override fun attachBaseContext(newBase: Context) {
+        val fontScale = AppPreferencesUtils.getInstance(newBase).fontScale
+        if (fontScale != newBase.resources.configuration.fontScale) {
+            val config = Configuration(newBase.resources.configuration).apply {
+                this.fontScale = fontScale
+            }
+            super.attachBaseContext(newBase.createConfigurationContext(config))
+        } else {
+            super.attachBaseContext(newBase)
+        }
+    }
+
     override fun onPause() {
         super.onPause()
         isActivityRunning = false
-    }
-
-    //禁止app字体大小跟随系统字体大小调节
-    override fun getResources(): Resources {
-        val fontScale = appPreferences.fontScale
-        val resources = super.getResources()
-        if (resources.configuration.fontScale != fontScale) {
-            val configuration = resources.configuration
-            configuration.fontScale = fontScale
-            resources.updateConfiguration(configuration, resources.displayMetrics)
-        }
-        return resources
     }
 
     protected fun showDialog(dialog: Dialog): Boolean {
@@ -115,7 +114,6 @@ abstract class BaseActivity : AppCompatActivity(), ExtraRefreshable, CoroutineSc
         }
         if (getLayoutId() != -1) {
             setContentView(getLayoutId())
-            ButterKnife.bind(this)
         }
     }
 

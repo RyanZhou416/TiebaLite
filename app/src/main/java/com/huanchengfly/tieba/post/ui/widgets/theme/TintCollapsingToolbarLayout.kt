@@ -31,18 +31,10 @@ class TintCollapsingToolbarLayout @JvmOverloads constructor(
                 setCollapsedTitleTextColor(context.getColorStateListCompat(textColorResId))
                 setExpandedTitleTextColor(context.getColorStateListCompat(textColorResId))
             } else {
-                setCollapsedTitleTextColor(
-                    ColorStateListUtils.createColorStateList(
-                        context,
-                        textColorResId
-                    )
-                )
-                setExpandedTitleTextColor(
-                    ColorStateListUtils.createColorStateList(
-                        context,
-                        textColorResId
-                    )
-                )
+                ColorStateListUtils.createColorStateList(context, textColorResId)?.let {
+                    setCollapsedTitleTextColor(it)
+                    setExpandedTitleTextColor(it)
+                }
             }
         }
     }

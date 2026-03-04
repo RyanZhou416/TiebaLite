@@ -1,9 +1,11 @@
 package com.huanchengfly.tieba.post.models.database
 
 import androidx.compose.runtime.Immutable
-import org.litepal.crud.LitePalSupport
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 
 @Immutable
+@Entity(tableName = "history")
 data class History(
     val title: String = "",
     val data: String = "",
@@ -13,6 +15,6 @@ data class History(
     val extras: String? = null,
     val avatar: String? = null,
     val username: String? = null,
-) : LitePalSupport() {
-    val id: Long = 0L
-}
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0L,
+)

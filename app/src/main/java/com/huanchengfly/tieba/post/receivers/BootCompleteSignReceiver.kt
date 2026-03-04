@@ -16,7 +16,7 @@ class BootCompleteSignReceiver : BroadcastReceiver() {
         if (Intent.ACTION_BOOT_COMPLETED == intent.action) {
             val autoSign = context.appPreferences.autoSign
             if (autoSign) {
-                val autoSignTimeStr = context.appPreferences.autoSignTime
+                val autoSignTimeStr = context.appPreferences.autoSignTime ?: "09:00"
                 if (Util.getTimeInMillis(autoSignTimeStr) > System.currentTimeMillis()) {
                     TiebaUtil.initAutoSign(context)
                 } else {

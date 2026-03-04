@@ -44,7 +44,9 @@ enum class ReplyPanelType {
 
 @Stable
 @HiltViewModel
-class ReplyViewModel @Inject constructor() :
+class ReplyViewModel @Inject constructor(
+    val database: com.huanchengfly.tieba.post.models.database.AppDatabase,
+) :
     BaseViewModel<ReplyUiIntent, ReplyPartialChange, ReplyUiState, ReplyUiEvent>() {
     override fun createInitialState() = ReplyUiState()
 

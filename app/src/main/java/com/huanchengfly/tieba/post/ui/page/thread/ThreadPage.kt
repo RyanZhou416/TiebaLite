@@ -171,15 +171,15 @@ import com.huanchengfly.tieba.post.utils.StringUtil.getShortNumString
 import com.huanchengfly.tieba.post.utils.TiebaUtil
 import com.huanchengfly.tieba.post.utils.Util.getIconColorByLevel
 import com.huanchengfly.tieba.post.utils.appPreferences
-import com.ramcosta.composedestinations.annotation.DeepLink
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootGraph
+import com.ramcosta.composedestinations.annotation.parameters.DeepLink
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import kotlin.concurrent.thread
 import kotlin.math.max
 
 private fun getDescText(
@@ -474,7 +474,7 @@ private fun ThreadLoadMoreIndicator(
 }
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
-@Destination(
+@Destination<RootGraph>(
     deepLinks = [
         DeepLink(uriPattern = "tblite://thread/{threadId}"),
     ]
@@ -863,28 +863,26 @@ fun ThreadPage(
     var savedHistory by remember { mutableStateOf(false) }
     LaunchedEffect(threadId, threadTitle, author, lastVisibilityPostId) {
         val saveHistory = {
-            thread {
-                runCatching {
-                    if (threadTitle.isNotBlank()) {
-                        HistoryUtil.saveHistory(
-                            History(
-                                title = threadTitle,
-                                data = threadId.toString(),
-                                type = HistoryUtil.TYPE_THREAD,
-                                extras = ThreadHistoryInfoBean(
-                                    isSeeLz = isSeeLz,
-                                    pid = lastVisibilityPostId.toString(),
-                                    forumName = forum?.get { name },
-                                    floor = lastVisibilityPost?.get { floor }?.toString()
-                                ).toJson(),
-                                avatar = StringUtil.getAvatarUrl(author?.get { portrait }),
-                                username = author?.get { nameShow }
-                            ),
-                            async = true
-                        )
-                        savedHistory = true
-                        Log.i("ThreadPage", "saveHistory $lastVisibilityPostId")
-                    }
+            runCatching {
+                if (threadTitle.isNotBlank()) {
+                    HistoryUtil.saveHistory(
+                        History(
+                            title = threadTitle,
+                            data = threadId.toString(),
+                            type = HistoryUtil.TYPE_THREAD,
+                            extras = ThreadHistoryInfoBean(
+                                isSeeLz = isSeeLz,
+                                pid = lastVisibilityPostId.toString(),
+                                forumName = forum?.get { name },
+                                floor = lastVisibilityPost?.get { floor }?.toString()
+                            ).toJson(),
+                            avatar = StringUtil.getAvatarUrl(author?.get { portrait }),
+                            username = author?.get { nameShow }
+                        ),
+                        async = true
+                    )
+                    savedHistory = true
+                    Log.i("ThreadPage", "saveHistory $lastVisibilityPostId")
                 }
             }
         }

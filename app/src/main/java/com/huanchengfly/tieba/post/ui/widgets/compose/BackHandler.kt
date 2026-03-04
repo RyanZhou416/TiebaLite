@@ -10,13 +10,13 @@ import com.ramcosta.composedestinations.spec.DestinationSpec
 @Composable
 fun MyBackHandler(
     enabled: Boolean,
-    currentScreen: DestinationSpec<*>? = null,
+    currentScreen: DestinationSpec? = null,
     onBack: () -> Unit,
 ) {
     val currentDestination = LocalDestination.current
 
     val shouldEnable =
-        enabled && (currentScreen == null || currentDestination?.baseRoute == currentScreen.baseRoute)
+        enabled && (currentScreen == null || currentDestination?.route == currentScreen.route)
 
     BackHandler(enabled = shouldEnable, onBack = onBack)
 }

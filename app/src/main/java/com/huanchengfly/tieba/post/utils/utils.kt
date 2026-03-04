@@ -20,8 +20,9 @@ import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
-import com.github.panpf.sketch.request.LoadRequest
-import com.github.panpf.sketch.request.LoadResult
+import com.github.panpf.sketch.asBitmap
+import com.github.panpf.sketch.request.ImageRequest
+import com.github.panpf.sketch.request.ImageResult
 import com.github.panpf.sketch.request.execute
 import com.google.android.material.snackbar.Snackbar
 import com.huanchengfly.tieba.post.App
@@ -76,7 +77,7 @@ fun getItemBackgroundDrawable(
     }
     return if (ripple) {
         wrapRipple(
-            Util.getColorByAttr(context, R.attr.colorControlHighlight, R.color.transparent),
+            Util.getColorByAttr(context, androidx.appcompat.R.attr.colorControlHighlight, R.color.transparent),
             shape
         )
     } else {
@@ -104,7 +105,7 @@ fun getRadiusDrawable(
         wrapRipple(
             Util.getColorByAttr(
                 App.INSTANCE,
-                R.attr.colorControlHighlight,
+                androidx.appcompat.R.attr.colorControlHighlight,
                 R.color.transparent
             ), drawable
         )
@@ -292,10 +293,10 @@ suspend fun requestPinShortcut(
     onFailure: (String) -> Unit = {}
 ) {
     if (ShortcutManagerCompat.isRequestPinShortcutSupported(context)) {
-        val imageResult = LoadRequest(context, iconImageUri).execute()
-        if (imageResult is LoadResult.Success) {
+        val imageResult = ImageRequest(context, iconImageUri).execute()
+        if (imageResult is ImageResult.Success) {
             val shortcutInfo = ShortcutInfoCompat.Builder(context, shortcutId)
-                .setIcon(IconCompat.createWithBitmap(imageResult.bitmap))
+                .setIcon(IconCompat.createWithBitmap(imageResult.image.asBitmap()))
                 .setIntent(shortcutIntent)
                 .setShortLabel(label)
                 .build()

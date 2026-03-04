@@ -6,8 +6,7 @@ import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
+import kotlinx.coroutines.launch
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -57,14 +56,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
-import androidx.core.view.WindowCompat
+import androidx.activity.enableEdgeToEdge
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
-import com.github.panpf.sketch.compose.AsyncImage
-import com.google.accompanist.placeholder.material.placeholder
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.github.panpf.sketch.AsyncImage
+import com.huanchengfly.tieba.post.ui.widgets.compose.placeholder
 import com.huanchengfly.tieba.post.R
 import com.huanchengfly.tieba.post.activities.BaseActivity
 import com.huanchengfly.tieba.post.arch.collectIn
@@ -183,32 +182,25 @@ class EditProfileActivity : BaseActivity() {
             flowOf(EditProfileIntent.Init(AccountUtil.getUid() ?: "0"))
         )
     }
-    private val handler = Handler(Looper.getMainLooper())
     override val isNeedImmersionBar: Boolean
         get() = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {
             TiebaLiteTheme {
-                val systemUiController = rememberSystemUiController()
+                val window = (LocalContext.current as android.app.Activity).window
                 SideEffect {
-                    systemUiController.apply {
-                        setStatusBarColor(
-                            Color.Transparent,
-                            darkIcons = ThemeUtil.isStatusBarFontDark()
-                        )
-                        setNavigationBarColor(
-                            Color.Transparent,
-                            darkIcons = ThemeUtil.isNavigationBarFontDark()
-                        )
+                    WindowInsetsControllerCompat(window, window.decorView).apply {
+                        isAppearanceLightStatusBars = ThemeUtil.isStatusBarFontDark()
+                        isAppearanceLightNavigationBars = ThemeUtil.isNavigationBarFontDark()
                     }
                 }
                 PageEditProfile(viewModel, onBackPressed = { onBackPressed() })
             }
         }
-        handler.post {
+        lifecycleScope.launch {
             intents.onEach(viewModel::send).launchIn(lifecycleScope)
         }
         viewModel.uiEventFlow
@@ -296,7 +288,7 @@ fun EditProfileCard(
                     .placeholder(visible = loading)
             ) {
                 AsyncImage(
-                    imageUri = StringUtil.getAvatarUrl(portrait),
+                    uri = StringUtil.getAvatarUrl(portrait),
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize()
                 )
