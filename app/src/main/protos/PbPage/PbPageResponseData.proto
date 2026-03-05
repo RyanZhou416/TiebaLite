@@ -4,6 +4,7 @@ package tieba.pbPage;
 
 option java_package = "com.huanchengfly.tieba.post.api.models.protos.pbPage";
 
+import "AichatBotCard.proto";
 import "AlaLiveInfo.proto";
 import "Anti.proto";
 import "BannerList.proto";
@@ -30,8 +31,12 @@ import "PbPage/PbSortType.proto";
 import "PbPage/PostBanner.proto";
 import "PbPage/RecommendBook.proto";
 import "PbTopAgreePost.proto";
+import "JumpLinkInfo.proto";
+import "PbPage/AiChatCard.proto";
+import "PbPage/SimilarContent.proto";
 import "Post.proto";
 import "Promotion.proto";
+import "RobotEntrance.proto";
 import "PsRankListItem.proto";
 import "RecomTopicList.proto";
 import "RecommendThread.proto";
@@ -112,4 +117,10 @@ message PbPageResponseData {
   string pb_notice = 67;
   int32 has_fold_comment = 68;
   int64 fold_comment_num = 70;
+  Post top_answer = 73;
+  JumpLinkInfo jump_link_info = 74;
+  SimilarContent similar_content = 75;
+  RobotEntrance robot_entrance = 76;
+  repeated AiChatCard aichat_card = 77;
+  AichatBotCard aichat_bot_card = 79;
 }

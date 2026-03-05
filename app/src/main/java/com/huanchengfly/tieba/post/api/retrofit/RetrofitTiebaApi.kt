@@ -108,7 +108,7 @@ object RetrofitTiebaApi {
     val WEB_TIEBA_API: WebTiebaApi by lazy {
         createJsonApi<WebTiebaApi>("https://tieba.baidu.com/",
             CommonHeaderInterceptor(
-                Header.USER_AGENT to { getUserAgent("tieba/11.10.8.6 skin/default") },
+                Header.USER_AGENT to { getUserAgent("tieba/${ClientVersion.TIEBA_V11.version} skin/default") },
                 Header.CUID to { CuidUtils.getNewCuid() },
                 Header.CUID_GALAXY2 to { CuidUtils.getNewCuid() },
                 Header.CUID_GID to { "" },
@@ -231,32 +231,9 @@ object RetrofitTiebaApi {
         )
     }
 
+    @Deprecated("Use OFFICIAL_PROTOBUF_TIEBA_V12_API instead — V11 and V12 now share the same protocol")
     val OFFICIAL_PROTOBUF_TIEBA_API: OfficialProtobufTiebaApi by lazy {
-        createProtobufApi<OfficialProtobufTiebaApi>(
-            "https://tiebac.baidu.com/",
-            CommonHeaderInterceptor(
-                Header.CHARSET to { "UTF-8" },
-                Header.CLIENT_TYPE to { "2" },
-                Header.CLIENT_USER_TOKEN to { AccountUtil.getUid() },
-                Header.COOKIE to { "CUID=${CuidUtils.getNewCuid()};ka=open;TBBRAND=${Build.MODEL};" },
-                Header.CUID to { CuidUtils.getNewCuid() },
-                Header.CUID_GALAXY2 to { CuidUtils.getNewCuid() },
-                Header.CUID_GID to { "" },
-                Header.CUID_GALAXY3 to { UIDUtil.getAid() },
-                Header.USER_AGENT to { "bdtb for Android ${ClientVersion.TIEBA_V11.version}" },
-                Header.X_BD_DATA_TYPE to { "protobuf" },
-            ),
-            defaultCommonParamInterceptor - Param.OS_VERSION + CommonParamInterceptor(
-                Param.CUID to { CuidUtils.getNewCuid() },
-                Param.CUID_GALAXY2 to { CuidUtils.getNewCuid() },
-                Param.CUID_GID to { "" },
-                Param.FROM to { "tieba" },
-                Param.CLIENT_VERSION to { ClientVersion.TIEBA_V11.version },
-                Param.CUID_GALAXY3 to { UIDUtil.getAid() },
-                Param.OAID to { OAID().toJson() },
-            ),
-            stParamInterceptor,
-        )
+        OFFICIAL_PROTOBUF_TIEBA_V12_API
     }
 
     val OFFICIAL_PROTOBUF_TIEBA_V12_API: OfficialProtobufTiebaApi by lazy {

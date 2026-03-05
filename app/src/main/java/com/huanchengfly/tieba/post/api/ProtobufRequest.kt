@@ -3,13 +3,11 @@ package com.huanchengfly.tieba.post.api
 import android.content.Context
 import android.os.Build
 import com.huanchengfly.tieba.post.App
-import com.huanchengfly.tieba.post.api.models.OAID
 import com.huanchengfly.tieba.post.api.models.protos.AppPosInfo
 import com.huanchengfly.tieba.post.api.models.protos.CommonRequest
 import com.huanchengfly.tieba.post.api.models.protos.frsPage.AdParam
 import com.huanchengfly.tieba.post.api.retrofit.RetrofitTiebaApi
 import com.huanchengfly.tieba.post.api.retrofit.body.MyMultipartBody
-import com.huanchengfly.tieba.post.toJson
 import com.huanchengfly.tieba.post.utils.AccountUtil
 import com.huanchengfly.tieba.post.utils.CacheUtil.base64Encode
 import com.huanchengfly.tieba.post.utils.ClientUtils
@@ -23,19 +21,16 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-const val BOUNDARY = "--------7da3d81520810*"
+const val BOUNDARY = "-*_r1999"
 
 fun buildProtobufRequestBody(
     data: Message<*, *>,
-    clientVersion: ClientVersion = ClientVersion.TIEBA_V11,
+    clientVersion: ClientVersion = ClientVersion.TIEBA_V12,
     needSToken: Boolean = true,
 ): MyMultipartBody {
     return MyMultipartBody.Builder(BOUNDARY)
         .apply {
             setType(MyMultipartBody.FORM)
-            if (clientVersion != ClientVersion.TIEBA_V12 && clientVersion != ClientVersion.TIEBA_V12_POST) {
-                addFormDataPart(Param.CLIENT_VERSION, clientVersion.version)
-            }
             if (needSToken) {
                 val sToken = AccountUtil.getSToken()
                 if (sToken != null) addFormDataPart(Param.STOKEN, sToken)
@@ -69,40 +64,14 @@ fun buildAppPosInfo(): AppPosInfo {
 
 fun buildCommonRequest(
     context: Context = App.INSTANCE,
-    clientVersion: ClientVersion = ClientVersion.TIEBA_V11,
+    clientVersion: ClientVersion = ClientVersion.TIEBA_V12,
     bduss: String? = null,
     stoken: String? = null,
     tbs: String? = null,
 ): CommonRequest = when (clientVersion) {
-    ClientVersion.TIEBA_V11 -> {
+    ClientVersion.TIEBA_V11, ClientVersion.TIEBA_V12 -> {
         CommonRequest(
             BDUSS = bduss ?: AccountUtil.getBduss(),
-            _client_id = ClientUtils.clientId ?: RetrofitTiebaApi.randomClientId,
-            _client_type = 2,
-            _client_version = clientVersion.version,
-            _os_version = "${Build.VERSION.SDK_INT}",
-            _phone_imei = MobileInfoUtil.getIMEI(context),
-            _timestamp = System.currentTimeMillis(),
-            brand = Build.BRAND,
-            c3_aid = UIDUtil.getAid(),
-            cuid = CuidUtils.getNewCuid(),
-            cuid_galaxy2 = CuidUtils.getNewCuid(),
-            cuid_gid = "",
-            from = "1024324o",
-            is_teenager = 0,
-            lego_lib_version = "3.0.0",
-            model = Build.MODEL,
-            net_type = 1,
-            oaid = OAID().toJson(),
-            pversion = "1.0.3",
-            sample_id = ClientUtils.sampleId,
-            stoken = stoken ?: AccountUtil.getSToken(),
-        )
-    }
-
-    ClientVersion.TIEBA_V12 -> {
-        CommonRequest(
-            BDUSS = AccountUtil.getBduss(),
             _client_id = ClientUtils.clientId ?: RetrofitTiebaApi.randomClientId,
             _client_type = 2,
             _client_version = clientVersion.version,
@@ -142,8 +111,9 @@ fun buildCommonRequest(
             sdk_ver = "2.34.0",
             start_scheme = "",
             start_type = 1,
-            stoken = AccountUtil.getSToken(),
+            stoken = stoken ?: AccountUtil.getSToken(),
             swan_game_ver = "1038000",
+            tbs = tbs,
             user_agent = getUserAgent("tieba/${clientVersion.version}"),
             z_id = AccountUtil.getAccountInfo { zid }
         )
@@ -151,11 +121,11 @@ fun buildCommonRequest(
 
     ClientVersion.TIEBA_V12_POST -> {
         CommonRequest(
-            BDUSS = AccountUtil.getBduss(),
+            BDUSS = bduss ?: AccountUtil.getBduss(),
             _client_id = ClientUtils.clientId ?: RetrofitTiebaApi.randomClientId,
             _client_type = 2,
             _client_version = clientVersion.version,
-            _os_version = "${Build.VERSION.SDK_INT}", // TODO
+            _os_version = "${Build.VERSION.SDK_INT}",
             _phone_imei = MobileInfoUtil.getIMEI(context),
             _timestamp = System.currentTimeMillis(),
             active_timestamp = ClientUtils.activeTimestamp,
@@ -193,7 +163,7 @@ fun buildCommonRequest(
             sdk_ver = "2.34.0",
             start_scheme = "",
             start_type = 1,
-            stoken = AccountUtil.getSToken(),
+            stoken = stoken ?: AccountUtil.getSToken(),
             swan_game_ver = "1038000",
             tbs = tbs,
             user_agent = getUserAgent("tieba/${clientVersion.version}"),

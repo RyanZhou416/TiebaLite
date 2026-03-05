@@ -4,7 +4,9 @@ package tieba;
 
 option java_package = "com.huanchengfly.tieba.post.api.models.protos.personalized";
 
+import "Anti.proto";
 import "CommonRequest.proto";
+import "SimpleForum.proto";
 import "ThreadInfo.proto";
 import "AppPosInfo.proto";
 import "Error.proto";
@@ -38,7 +40,10 @@ message PersonalizedRequest {
 
 message PersonalizedResponseData {
   repeated ThreadInfo thread_list = 2;
+  uint32 sug_seconds = 6;
   repeated ThreadPersonalized thread_personalized = 7;
+  repeated SimpleForum like_forums = 14;
+  Anti anti = 16;
 }
 
 message PersonalizedResponse {

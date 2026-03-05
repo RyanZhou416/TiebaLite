@@ -7,6 +7,7 @@ import com.huanchengfly.tieba.post.api.models.protos.frsPage.FrsPageResponse
 import com.huanchengfly.tieba.post.api.models.protos.getBawuInfo.GetBawuInfoResponse
 import com.huanchengfly.tieba.post.api.models.protos.getForumDetail.GetForumDetailResponse
 import com.huanchengfly.tieba.post.api.models.protos.getHistoryForum.GetHistoryForumResponse
+import com.huanchengfly.tieba.post.api.models.protos.replyMe.ReplyMeResponse
 import com.huanchengfly.tieba.post.api.models.protos.getLevelInfo.GetLevelInfoResponse
 import com.huanchengfly.tieba.post.api.models.protos.getMemberInfo.GetMemberInfoResponse
 import com.huanchengfly.tieba.post.api.models.protos.getUserInfo.GetUserInfoResponse
@@ -127,4 +128,9 @@ interface OfficialProtobufTiebaApi {
     fun getHistoryForumFlow(
         @Body body: MyMultipartBody,
     ): Flow<GetHistoryForumResponse>
+
+    @POST("/c/u/feed/replyme?cmd=303007")
+    fun replyMeFlow(
+        @Body body: MyMultipartBody,
+    ): Flow<ReplyMeResponse>
 }

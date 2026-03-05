@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package tieba.replyMe;
+
+option java_package = "com.huanchengfly.tieba.post.api.models.protos.replyMe";
+
+import "Error.proto";
+import "ReplyMe/ReplyMeResponseData.proto";
+
+message ReplyMeResponse {
+    Error error = 1;
+    ReplyMeResponseData data = 2;
+}

@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package tieba.replyMe;
+
+option java_package = "com.huanchengfly.tieba.post.api.models.protos.replyMe";
+
+import "CommonRequest.proto";
+
+message ReplyMeRequestData {
+    string pn = 1;
+    CommonRequest common = 3;
+}

@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package tieba;
+
+option java_package = "com.huanchengfly.tieba.post.api.models.protos";
+
+message RobotSkill {
+    string robot_uk = 1;
+    repeated int32 skill_ids = 2;
+}

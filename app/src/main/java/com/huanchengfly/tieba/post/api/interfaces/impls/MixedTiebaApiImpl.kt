@@ -9,6 +9,7 @@ import com.huanchengfly.tieba.post.api.Param
 import com.huanchengfly.tieba.post.api.SearchThreadFilter
 import com.huanchengfly.tieba.post.api.SearchThreadOrder
 import com.huanchengfly.tieba.post.api.booleanToString
+import com.huanchengfly.tieba.post.api.BOUNDARY
 import com.huanchengfly.tieba.post.api.buildAdParam
 import com.huanchengfly.tieba.post.api.buildAppPosInfo
 import com.huanchengfly.tieba.post.api.buildCommonRequest
@@ -93,6 +94,9 @@ import com.huanchengfly.tieba.post.api.models.protos.personalized.PersonalizedRe
 import com.huanchengfly.tieba.post.api.models.protos.profile.ProfileRequest
 import com.huanchengfly.tieba.post.api.models.protos.profile.ProfileRequestData
 import com.huanchengfly.tieba.post.api.models.protos.profile.ProfileResponse
+import com.huanchengfly.tieba.post.api.models.protos.replyMe.ReplyMeRequest
+import com.huanchengfly.tieba.post.api.models.protos.replyMe.ReplyMeRequestData
+import com.huanchengfly.tieba.post.api.models.protos.replyMe.ReplyMeResponse
 import com.huanchengfly.tieba.post.api.models.protos.searchSug.SearchSugRequest
 import com.huanchengfly.tieba.post.api.models.protos.searchSug.SearchSugRequestData
 import com.huanchengfly.tieba.post.api.models.protos.searchSug.SearchSugResponse
@@ -538,6 +542,19 @@ object MixedTiebaApiImpl : ITiebaApi {
     override fun replyMeFlow(page: Int): Flow<MessageListBean> =
         RetrofitTiebaApi.NEW_TIEBA_API.replyMeFlow(page)
 
+    override fun replyMeProtoFlow(page: Int): Flow<ReplyMeResponse> =
+        RetrofitTiebaApi.OFFICIAL_PROTOBUF_TIEBA_V12_API.replyMeFlow(
+            buildProtobufRequestBody(
+                ReplyMeRequest(
+                    ReplyMeRequestData(
+                        common = buildCommonRequest(clientVersion = ClientVersion.TIEBA_V12),
+                        pn = page.toString(),
+                    )
+                ),
+                clientVersion = ClientVersion.TIEBA_V12,
+            )
+        )
+
     override fun atMe(page: Int): Call<MessageListBean> = RetrofitTiebaApi.NEW_TIEBA_API.atMe(page)
 
     override fun atMeAsync(page: Int): Deferred<ApiResult<MessageListBean>> =
@@ -950,9 +967,9 @@ object MixedTiebaApiImpl : ITiebaApi {
 
     override fun imgPortrait(file: File): Flow<CommonResponse> {
         return RetrofitTiebaApi.OFFICIAL_TIEBA_API.imgPortrait(
-            MyMultipartBody.Builder("--------7da3d81520810*").apply {
+            MyMultipartBody.Builder(BOUNDARY).apply {
                 setType(MyMultipartBody.FORM)
-                addFormDataPart(Param.CLIENT_VERSION, "11.10.8.6")
+                addFormDataPart(Param.CLIENT_VERSION, ClientVersion.TIEBA_V11.version)
                 addFormDataPart("pic", "file", file.asRequestBody())
             }.build()
         )
@@ -972,47 +989,50 @@ object MixedTiebaApiImpl : ITiebaApi {
         lastRequestUnix: Long,
         loadType: Int
     ): Flow<UserLikeResponse> {
-        return RetrofitTiebaApi.OFFICIAL_PROTOBUF_TIEBA_API.userLikeFlow(
+        return RetrofitTiebaApi.OFFICIAL_PROTOBUF_TIEBA_V12_API.userLikeFlow(
             buildProtobufRequestBody(
                 UserLikeRequest(
                     UserLikeRequestData(
-                        common = buildCommonRequest(),
+                        common = buildCommonRequest(clientVersion = ClientVersion.TIEBA_V12),
                         pageTag = pageTag,
                         lastRequestUnix = lastRequestUnix,
                         followType = 1,
                         loadType = loadType
                     )
-                )
+                ),
+                clientVersion = ClientVersion.TIEBA_V12,
             )
         )
     }
 
     override fun hotThreadListFlow(tabCode: String): Flow<HotThreadListResponse> {
-        return RetrofitTiebaApi.OFFICIAL_PROTOBUF_TIEBA_API.hotThreadListFlow(
+        return RetrofitTiebaApi.OFFICIAL_PROTOBUF_TIEBA_V12_API.hotThreadListFlow(
             buildProtobufRequestBody(
                 HotThreadListRequest(
                     HotThreadListRequestData(
-                        common = buildCommonRequest(),
+                        common = buildCommonRequest(clientVersion = ClientVersion.TIEBA_V12),
                         tabCode = tabCode,
                         tabId = "1"
                     )
-                )
+                ),
+                clientVersion = ClientVersion.TIEBA_V12,
             )
         )
     }
 
     override fun topicListFlow(): Flow<TopicListResponse> {
-        return RetrofitTiebaApi.OFFICIAL_PROTOBUF_TIEBA_API.topicListFlow(
+        return RetrofitTiebaApi.OFFICIAL_PROTOBUF_TIEBA_V12_API.topicListFlow(
             buildProtobufRequestBody(
                 TopicListRequest(
                     TopicListRequestData(
-                        common = buildCommonRequest(),
+                        common = buildCommonRequest(clientVersion = ClientVersion.TIEBA_V12),
                         call_from = "newbang",
                         list_type = "all",
                         need_tab_list = "0",
                         fid = 0L
                     )
-                )
+                ),
+                clientVersion = ClientVersion.TIEBA_V12,
             )
         )
     }
@@ -1020,17 +1040,18 @@ object MixedTiebaApiImpl : ITiebaApi {
     override fun forumRecommendNewFlow(
         sortType: Int
     ): Flow<ForumRecommendResponse> {
-        return RetrofitTiebaApi.OFFICIAL_PROTOBUF_TIEBA_API.forumRecommendFlow(
+        return RetrofitTiebaApi.OFFICIAL_PROTOBUF_TIEBA_V12_API.forumRecommendFlow(
             buildProtobufRequestBody(
                 ForumRecommendRequest(
                     ForumRecommendRequestData(
-                        common = buildCommonRequest(),
+                        common = buildCommonRequest(clientVersion = ClientVersion.TIEBA_V12),
                         like_forum = 1,
                         recommend = 1,
                         sort_type = sortType,
                         topic = 0
                     )
-                )
+                ),
+                clientVersion = ClientVersion.TIEBA_V12,
             )
         )
     }

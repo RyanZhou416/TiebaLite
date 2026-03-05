@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package tieba;
+
+option java_package = "com.huanchengfly.tieba.post.api.models.protos";
+
+import "StyleConfExtra.proto";
+import "StyleContentInfo.proto";
+
+message StyleConf {
+    string scene = 1;
+    string content = 2;
+    StyleConfExtra android_extra = 3;
+    StyleConfExtra ios_extra = 4;
+    StyleContentInfo day = 5;
+    StyleContentInfo dark = 6;
+}

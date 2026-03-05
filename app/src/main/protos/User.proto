@@ -2,9 +2,13 @@ syntax = "proto3";
 
 package tieba;
 
+import "AlaLiveInfo.proto";
+import "AlaUserInfo.proto";
+import "BaijiahaoInfo.proto";
 import "BawuThrones.proto";
 import "BazhuSign.proto";
 import "BirthdayInfo.proto";
+import "BusinessAccountInfo.proto";
 import "GodInfo.proto";
 import "Icon.proto";
 import "LikeForumInfo.proto";
@@ -70,8 +74,14 @@ message User {
   string bg_pic = 58;
   GodInfo god_data = 62;
   int32 heavy_user = 63;
+  uint32 no_post_high = 73;
   int32 visitor_num = 75;
   int32 total_visitor_num = 76;
+  AlaUserInfo ala_info = 78;
+  string seal_prefix = 79;
+  int32 has_bottle_enter = 80;
+  int32 each_other_friend = 83;
+  AlaLiveInfo ala_live_info = 85;
   int32 nickname_update_time = 86;
   int32 thread_num = 87;
   int32 agree_num = 88;
@@ -81,6 +91,7 @@ message User {
   int32 priv_thread = 92;
   int32 is_videobiggie = 93;
   int32 is_show_redpacket = 94;
+  BaijiahaoInfo baijiahao_info = 95;
   BirthdayInfo birthday_info = 96;
   int32 can_modify_avatar = 97;
   string modify_avatar_desc = 98;
@@ -90,9 +101,17 @@ message User {
   BawuThrones bawu_thrones = 103;
   BazhuSign bazhu_grade = 105;
   int32 isDefaultAvatar = 106;
+  string uk = 107;
   int32 favorite_num = 109;
+  BusinessAccountInfo business_account_info = 111;
+  string appeal_thread_popover = 112;
+  uint32 work_num = 116;
+  int32 show_pb_private_flag = 117;
   uint32 total_agree_num = 118;
   string tieba_uid = 120;
+  string follow_from = 121;
+  repeated BazhuSign manager_forum = 122;
+  int32 display_auth_type = 123;
   string level_name = 125;
   string ip_address = 127;
   int32 is_nickname_editing = 128;
@@ -100,4 +119,8 @@ message User {
   string display_intro = 138;
   repeated string new_icon_url = 139;
   string dynamic_url = 140;
+  string ios_b_url = 147;
+  int64 pa = 148;
+  int32 enable_new_homepage = 149;
+  string target_scheme = 150;
 }

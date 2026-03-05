@@ -123,21 +123,21 @@ class SingleAccountSigner(
                 TiebaApi.getInstance().getForumListFlow()
             }
             .zip(
-                TiebaApi.getInstance().forumRecommendFlow()
-            ) { getForumListBean, forumRecommendBean ->
+                TiebaApi.getInstance().forumRecommendNewFlow()
+            ) { getForumListBean, forumRecommendResponse ->
                 val useMSign = context.appPreferences.oksignUseOfficialOksign
                 val mSignLevel = getForumListBean.level.toInt()
                 val mSignMax = getForumListBean.msignStepNum.toInt()
                 signData.addAll(
-                    forumRecommendBean.likeForum
-                        .filter { it.isSign != "1" }
+                    (forumRecommendResponse.data_?.like_forum ?: emptyList())
+                        .filter { it.is_sign != 1 }
                         .map {
                             SignDataBean(
-                                it.forumName,
-                                it.forumId,
+                                it.forum_name,
+                                it.forum_id.toString(),
                                 userName,
                                 tbs,
-                                it.levelId.toInt() >= mSignLevel && signData.size < mSignMax
+                                it.level_id >= mSignLevel && signData.size < mSignMax
                             )
                         }
                 )

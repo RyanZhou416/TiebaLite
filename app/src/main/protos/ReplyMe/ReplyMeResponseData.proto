@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package tieba.replyMe;
+
+option java_package = "com.huanchengfly.tieba.post.api.models.protos.replyMe";
+
+import "Page.proto";
+import "ReplyMe/ReplyList.proto";
+
+message ReplyMeResponseData {
+    Page page = 1;
+    repeated ReplyList reply_list = 2;
+}

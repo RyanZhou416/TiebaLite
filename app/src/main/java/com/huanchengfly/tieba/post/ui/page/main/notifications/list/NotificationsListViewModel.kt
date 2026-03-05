@@ -5,6 +5,8 @@ import androidx.compose.runtime.Stable
 import androidx.compose.ui.util.fastMap
 import com.huanchengfly.tieba.post.api.TiebaApi
 import com.huanchengfly.tieba.post.api.models.MessageListBean
+import com.huanchengfly.tieba.post.api.models.protos.replyMe.ReplyList
+import com.huanchengfly.tieba.post.api.models.protos.replyMe.ReplyMeResponse
 import com.huanchengfly.tieba.post.api.retrofit.exception.getErrorMessage
 import com.huanchengfly.tieba.post.arch.BaseViewModel
 import com.huanchengfly.tieba.post.arch.CommonUiEvent
@@ -68,42 +70,89 @@ private class NotificationsListPartialChangeProducer(private val type: Notificat
         )
 
     private fun produceRefreshPartialChange(): Flow<NotificationsListPartialChange.Refresh> =
-        (when (type) {
-            NotificationsType.ReplyMe -> TiebaApi.getInstance().replyMeFlow()
-            NotificationsType.AtMe -> TiebaApi.getInstance().atMeFlow()
-        }).map<MessageListBean, NotificationsListPartialChange.Refresh> { messageListBean ->
-            val data =
-                ((if (type == NotificationsType.ReplyMe) messageListBean.replyList else messageListBean.atList)
-                    ?: emptyList()).fastMap {
-                    MessageItemData(it)
+        when (type) {
+            NotificationsType.ReplyMe -> TiebaApi.getInstance().replyMeProtoFlow()
+                .map<ReplyMeResponse, NotificationsListPartialChange.Refresh> { response ->
+                    val data = (response.data_?.reply_list ?: emptyList()).fastMap {
+                        MessageItemData(it.toMessageInfoBean())
+                    }
+                    NotificationsListPartialChange.Refresh.Success(
+                        data = data,
+                        hasMore = (response.data_?.page?.has_more ?: 0) == 1
+                    )
                 }
-            NotificationsListPartialChange.Refresh.Success(
-                data = data,
-                hasMore = messageListBean.page?.hasMore == "1"
-            )
+            NotificationsType.AtMe -> TiebaApi.getInstance().atMeFlow()
+                .map<MessageListBean, NotificationsListPartialChange.Refresh> { messageListBean ->
+                    val data = (messageListBean.atList ?: emptyList()).fastMap {
+                        MessageItemData(it)
+                    }
+                    NotificationsListPartialChange.Refresh.Success(
+                        data = data,
+                        hasMore = messageListBean.page?.hasMore == "1"
+                    )
+                }
         }
             .onStart { emit(NotificationsListPartialChange.Refresh.Start) }
             .catch { emit(NotificationsListPartialChange.Refresh.Failure(it)) }
 
     private fun NotificationsListUiIntent.LoadMore.produceLoadMorePartialChange() =
-        (when (type) {
-            NotificationsType.ReplyMe -> TiebaApi.getInstance().replyMeFlow(page = page)
-            NotificationsType.AtMe -> TiebaApi.getInstance().atMeFlow(page = page)
-        }).map<MessageListBean, NotificationsListPartialChange.LoadMore> { messageListBean ->
-            val data =
-                ((if (type == NotificationsType.ReplyMe) messageListBean.replyList else messageListBean.atList)
-                    ?: emptyList()).fastMap {
-                    MessageItemData(it)
+        when (type) {
+            NotificationsType.ReplyMe -> TiebaApi.getInstance().replyMeProtoFlow(page = page)
+                .map<ReplyMeResponse, NotificationsListPartialChange.LoadMore> { response ->
+                    val data = (response.data_?.reply_list ?: emptyList()).fastMap {
+                        MessageItemData(it.toMessageInfoBean())
+                    }
+                    NotificationsListPartialChange.LoadMore.Success(
+                        currentPage = page,
+                        data = data,
+                        hasMore = (response.data_?.page?.has_more ?: 0) == 1
+                    )
                 }
-            NotificationsListPartialChange.LoadMore.Success(
-                currentPage = page,
-                data = data,
-                hasMore = messageListBean.page?.hasMore == "1"
-            )
+            NotificationsType.AtMe -> TiebaApi.getInstance().atMeFlow(page = page)
+                .map<MessageListBean, NotificationsListPartialChange.LoadMore> { messageListBean ->
+                    val data = (messageListBean.atList ?: emptyList()).fastMap {
+                        MessageItemData(it)
+                    }
+                    NotificationsListPartialChange.LoadMore.Success(
+                        currentPage = page,
+                        data = data,
+                        hasMore = messageListBean.page?.hasMore == "1"
+                    )
+                }
         }
             .onStart { emit(NotificationsListPartialChange.LoadMore.Start) }
             .catch { emit(NotificationsListPartialChange.LoadMore.Failure(currentPage = page, error = it)) }
 }
+
+private fun ReplyList.toMessageInfoBean() = MessageListBean.MessageInfoBean(
+    isFloor = is_floor.toString(),
+    title = title,
+    content = content,
+    quoteContent = quote_content,
+    replyer = replyer?.let {
+        MessageListBean.ReplyerInfoBean(
+            id = it.id.toString(),
+            name = it.name,
+            nameShow = it.nameShow,
+            portrait = it.portrait,
+        )
+    },
+    quoteUser = quote_user?.let {
+        MessageListBean.UserInfoBean(
+            id = it.id.toString(),
+            name = it.name,
+            nameShow = it.nameShow,
+            portrait = it.portrait,
+        )
+    },
+    threadId = thread_id.toString(),
+    postId = post_id.toString(),
+    time = time.toString(),
+    forumName = fname,
+    quotePid = quote_pid.toString(),
+    threadType = thread_type.toString(),
+    unread = unread.toString(),
+)
 
 enum class NotificationsType {
     ReplyMe, AtMe

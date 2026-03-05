@@ -70,6 +70,7 @@ message FrsPageResponseData {
   repeated ThreadInfo thread_list = 7;
   repeated int64 thread_id_list = 8;
   int32 is_new_url = 9;
+  int32 fortune_bag = 10;
   int32 time = 11;
   int32 ctime = 12;
   int64 logid = 13;
@@ -77,7 +78,12 @@ message FrsPageResponseData {
   repeated User user_list = 17;
   repeated FrsTabInfo frs_tab_info = 22;
   ActivityHead activity_head = 23;
+  ThreadInfo store_card = 30;
+  string bawu_enter_url = 32;
   NavTabInfo nav_tab_info = 37;
+  int32 frs_tab_default = 38;
+  int32 sort_type = 39;
+  int32 show_adsense = 108;
   ForumRuleStatus forum_rule = 105;
 }
 

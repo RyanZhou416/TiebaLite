@@ -19,6 +19,7 @@ import com.huanchengfly.tieba.post.api.models.protos.pbFloor.PbFloorResponse
 import com.huanchengfly.tieba.post.api.models.protos.pbPage.PbPageResponse
 import com.huanchengfly.tieba.post.api.models.protos.personalized.PersonalizedResponse
 import com.huanchengfly.tieba.post.api.models.protos.profile.ProfileResponse
+import com.huanchengfly.tieba.post.api.models.protos.replyMe.ReplyMeResponse
 import com.huanchengfly.tieba.post.api.models.protos.searchSug.SearchSugResponse
 import com.huanchengfly.tieba.post.api.models.protos.threadList.ThreadListResponse
 import com.huanchengfly.tieba.post.api.models.protos.topicList.TopicListResponse
@@ -59,12 +60,7 @@ interface ITiebaApi {
         page: Int = 1
     ): Deferred<ApiResult<PersonalizedBean>>
 
-    /**
-     * 个性推荐（每页 15 贴）
-     *
-     * @param loadType 加载类型（1 - 下拉刷新 2 - 加载更多）
-     * @param page 分页页码
-     */
+    @Deprecated("Use personalizedProtoFlow() instead", ReplaceWith("personalizedProtoFlow(loadType, page)"))
     fun personalizedFlow(
         loadType: Int,
         page: Int = 1
@@ -143,35 +139,16 @@ interface ITiebaApi {
         opType: Int
     ): Flow<AgreeBean>
 
-    /**
-     * 关注吧列表
-     *
-     * **需登录**
-     */
+    @Deprecated("Use forumRecommendNewFlow() instead")
     fun forumRecommend(): Call<ForumRecommend>
 
-    /**
-     * 关注吧列表
-     *
-     * **需登录**
-     */
+    @Deprecated("Use forumRecommendNewFlow() instead")
     fun forumRecommendAsync(): Deferred<ApiResult<ForumRecommend>>
 
-    /**
-     * 关注吧列表
-     *
-     * **需登录**
-     */
+    @Deprecated("Use forumRecommendNewFlow() instead")
     fun forumRecommendFlow(): Flow<ForumRecommend>
 
-    /**
-     * 吧页面
-     *
-     * @param forumName 吧名
-     * @param page 分页页码（从 1 开始）
-     * @param sortType 排序类型 [com.huanchengfly.tieba.post.api.ForumSortType]
-     * @param goodClassifyId 精品贴分类 ID
-     */
+    @Deprecated("Use frsPage() (Protobuf) instead")
     fun forumPage(
         forumName: String,
         page: Int = 1,
@@ -179,14 +156,7 @@ interface ITiebaApi {
         goodClassifyId: String? = null
     ): Call<ForumPageBean>
 
-    /**
-     * 吧页面（异步）
-     *
-     * @param forumName 吧名
-     * @param page 分页页码（从 1 开始）
-     * @param sortType 排序类型 [com.huanchengfly.tieba.api.ForumSortType]
-     * @param goodClassifyId 精品贴分类 ID
-     */
+    @Deprecated("Use frsPage() (Protobuf) instead")
     fun forumPageAsync(
         forumName: String,
         page: Int = 1,
@@ -194,14 +164,7 @@ interface ITiebaApi {
         goodClassifyId: String? = null
     ): Deferred<ApiResult<ForumPageBean>>
 
-    /**
-     * 楼中楼页面
-     *
-     * @param threadId 贴 ID
-     * @param page 分页页码
-     * @param postId 回复 ID
-     * @param subPostId 楼中楼回复 ID
-     */
+    @Deprecated("Use pbFloorFlow() (Protobuf) instead")
     fun floor(
         threadId: String,
         page: Int = 1,
@@ -231,13 +194,7 @@ interface ITiebaApi {
         page: Int = 1
     ): Call<UserLikeForumBean>
 
-    /**
-     * 查看用户的所有主题贴/回复
-     *
-     * @param uid 用户 ID
-     * @param page 分页页码（从 1 开始）
-     * @param isThread 是否查看主题贴
-     */
+    @Deprecated("Use userPostFlow() (Protobuf) instead")
     fun userPost(
         uid: String,
         page: Int = 1,
@@ -290,20 +247,12 @@ interface ITiebaApi {
         prev: Boolean
     ): Flow<PicPageBean>
 
-    /**
-     * 用户信息
-     *
-     * @param uid 用户 ID
-     */
+    @Deprecated("Use userProfileFlow() (Protobuf) instead")
     fun profile(
         uid: String
     ): Call<ProfileBean>
 
-    /**
-     * 用户信息（Flow）
-     *
-     * @param uid 用户 ID
-     */
+    @Deprecated("Use userProfileFlow() (Protobuf) instead")
     fun profileFlow(
         uid: String
     ): Flow<Profile>
@@ -664,6 +613,7 @@ interface ITiebaApi {
      *
      * @param page 分页页码（从 1 开始）
      */
+    @Deprecated("Use replyMeProtoFlow instead", ReplaceWith("replyMeProtoFlow(page)"))
     fun replyMe(
         page: Int = 1
     ): Call<MessageListBean>
@@ -675,6 +625,7 @@ interface ITiebaApi {
      *
      * @param page 分页页码（从 1 开始）
      */
+    @Deprecated("Use replyMeProtoFlow instead", ReplaceWith("replyMeProtoFlow(page)"))
     fun replyMeAsync(
         page: Int = 1
     ): Deferred<ApiResult<MessageListBean>>
@@ -687,9 +638,14 @@ interface ITiebaApi {
      * @param page 分页页码（从 1 开始）
      * @return Flow
      */
+    @Deprecated("Use replyMeProtoFlow instead", ReplaceWith("replyMeProtoFlow(page)"))
     fun replyMeFlow(
         page: Int = 1
     ): Flow<MessageListBean>
+
+    fun replyMeProtoFlow(
+        page: Int = 1
+    ): Flow<ReplyMeResponse>
 
     /**
      * 提到我的消息列表
@@ -736,14 +692,7 @@ interface ITiebaApi {
         page: Int = 1
     ): Call<MessageListBean>
 
-    /**
-     * 贴页面
-     *
-     * @param threadId 贴 ID
-     * @param page 分页页码（从 1 开始）
-     * @param seeLz 是否只看楼主
-     * @param reverse 是否逆序
-     */
+    @Deprecated("Use pbPageFlow() (Protobuf) instead")
     fun threadContent(
         threadId: String,
         page: Int = 1,
@@ -751,14 +700,7 @@ interface ITiebaApi {
         reverse: Boolean = false
     ): Call<ThreadContentBean>
 
-    /**
-     * 贴页面
-     *
-     * @param threadId 贴 ID
-     * @param postId 回复 ID
-     * @param seeLz 是否只看楼主
-     * @param reverse 是否逆序
-     */
+    @Deprecated("Use pbPageFlow() (Protobuf) instead")
     fun threadContent(
         threadId: String,
         postId: String?,
@@ -766,14 +708,7 @@ interface ITiebaApi {
         reverse: Boolean = false
     ): Call<ThreadContentBean>
 
-    /**
-     * 贴页面
-     *
-     * @param threadId 贴 ID
-     * @param page 分页页码（从 1 开始）
-     * @param seeLz 是否只看楼主
-     * @param reverse 是否逆序
-     */
+    @Deprecated("Use pbPageFlow() (Protobuf) instead")
     fun threadContentAsync(
         threadId: String,
         page: Int = 1,
@@ -781,14 +716,7 @@ interface ITiebaApi {
         reverse: Boolean = false
     ): Deferred<ApiResult<ThreadContentBean>>
 
-    /**
-     * 贴页面
-     *
-     * @param threadId 贴 ID
-     * @param postId 回复 ID
-     * @param seeLz 是否只看楼主
-     * @param reverse 是否逆序
-     */
+    @Deprecated("Use pbPageFlow() (Protobuf) instead")
     fun threadContentAsync(
         threadId: String,
         postId: String?,
