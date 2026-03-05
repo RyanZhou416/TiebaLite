@@ -115,12 +115,10 @@ private fun PreviewImage(
         with(density) { previewImageHeightPx.toDp() }
     }
 
-    val screenWidth = App.ScreenInfo.EXACT_SCREEN_WIDTH
-    val screenCenterX = screenWidth / 2
-    val screenHeight = App.ScreenInfo.EXACT_SCREEN_HEIGHT
-    val screenCenterY = screenHeight / 2
     if (showFullScreenLayout) {
         val animProgress = remember { Animatable(0f) }
+        var fullScreenLayoutSize by remember { mutableStateOf(IntSize.Zero) }
+        var fullScreenLayoutOffset by remember { mutableStateOf(Offset.Zero) }
 
         LaunchedEffect(showPreview) {
             animProgress.animateTo(
@@ -151,6 +149,12 @@ private fun PreviewImage(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
+                            .onSizeChanged {
+                                fullScreenLayoutSize = it
+                            }
+                            .onGloballyPositioned {
+                                fullScreenLayoutOffset = it.positionInWindow()
+                            }
                             .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.5f * animProgress.value)),
                         contentAlignment = Alignment.Center
                     ) {
@@ -164,26 +168,31 @@ private fun PreviewImage(
                                 )
                                 .absoluteOffset {
                                     val layoutOffset = layoutOffsetProvider()
+                                    val progress = animProgress.value.coerceIn(0f, 1f)
                                     val currentLayoutWidthPx = lerp(
                                         layoutWidthPx.toFloat(),
                                         previewImageWidthPx,
-                                        animProgress.value
+                                        progress
                                     )
                                     val currentLayoutHeightPx = lerp(
                                         layoutHeightPx.toFloat(),
                                         previewImageHeightPx,
-                                        animProgress.value
+                                        progress
                                     )
+                                    val fullScreenLayoutWidth = fullScreenLayoutSize.width.toFloat()
+                                    val fullScreenLayoutHeight = fullScreenLayoutSize.height.toFloat()
+                                    val centeredLayoutLeft = (fullScreenLayoutWidth - currentLayoutWidthPx) / 2f
+                                    val centeredLayoutTop = (fullScreenLayoutHeight - currentLayoutHeightPx) / 2f
                                     IntOffset(
                                         lerp(
-                                            layoutOffset.x - (screenCenterX - currentLayoutWidthPx / 2),
+                                            layoutOffset.x - fullScreenLayoutOffset.x - centeredLayoutLeft,
                                             0f,
-                                            animProgress.value
+                                            progress
                                         ).toInt(),
                                         lerp(
-                                            layoutOffset.y - (screenCenterY - currentLayoutHeightPx / 2),
+                                            layoutOffset.y - fullScreenLayoutOffset.y - centeredLayoutTop,
                                             0f,
-                                            animProgress.value
+                                            progress
                                         ).toInt()
                                     )
                                 }
