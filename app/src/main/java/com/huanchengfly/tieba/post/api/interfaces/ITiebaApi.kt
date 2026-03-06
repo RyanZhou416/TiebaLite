@@ -9,8 +9,11 @@ import com.huanchengfly.tieba.post.api.models.protos.forumRecommend.ForumRecomme
 import com.huanchengfly.tieba.post.api.models.protos.forumRuleDetail.ForumRuleDetailResponse
 import com.huanchengfly.tieba.post.api.models.protos.frsPage.FrsPageResponse
 import com.huanchengfly.tieba.post.api.models.protos.getBawuInfo.GetBawuInfoResponse
+import com.huanchengfly.tieba.post.api.models.protos.getDislikeList.GetDislikeListResponse
 import com.huanchengfly.tieba.post.api.models.protos.getForumDetail.GetForumDetailResponse
+import com.huanchengfly.tieba.post.api.models.protos.getForumSquare.GetForumSquareResponse
 import com.huanchengfly.tieba.post.api.models.protos.getHistoryForum.GetHistoryForumResponse
+import com.huanchengfly.tieba.post.api.models.protos.searchPostForum.SearchPostForumResponse
 import com.huanchengfly.tieba.post.api.models.protos.getLevelInfo.GetLevelInfoResponse
 import com.huanchengfly.tieba.post.api.models.protos.getMemberInfo.GetMemberInfoResponse
 import com.huanchengfly.tieba.post.api.models.protos.getUserInfo.GetUserInfoResponse
@@ -1453,4 +1456,34 @@ interface ITiebaApi {
     fun getHistoryForumFlow(
         history: String,
     ): Flow<GetHistoryForumResponse>
+
+    /**
+     * 获取不喜欢的吧列表（Protobuf，cmd=309692）
+     * @param page 页码，从 1 开始
+     * @param rn 每页条数，默认 20（与 aiotieba 一致）
+     */
+    fun getDislikeListFlow(
+        page: Int = 1,
+        rn: Int = 20,
+    ): Flow<GetDislikeListResponse>
+
+    /**
+     * 吧广场列表（Protobuf，cmd=309653）
+     * @param className 分类名（如 aiotieba 的 cname）
+     * @param page 页码
+     * @param rn 每页条数，默认 20
+     */
+    fun getForumSquareFlow(
+        className: String,
+        page: Int = 1,
+        rn: Int = 20,
+    ): Flow<GetForumSquareResponse>
+
+    /**
+     * 搜索标签/吧映射（get_tab_map，Protobuf，cmd=309466）
+     * @param word 吧名或关键词（aiotieba 称 fname）
+     */
+    fun searchPostForumFlow(
+        word: String,
+    ): Flow<SearchPostForumResponse>
 }

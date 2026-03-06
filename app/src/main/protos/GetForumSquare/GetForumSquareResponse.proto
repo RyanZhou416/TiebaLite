@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package tieba.getForumSquare;
+
+option java_package = "com.huanchengfly.tieba.post.api.models.protos.getForumSquare";
+
+import "Error.proto";
+import "GetForumSquare/GetForumSquareResponseData.proto";
+
+message GetForumSquareResponse {
+  Error error = 1;
+  GetForumSquareResponseData data = 2;
+}

@@ -1,6 +1,7 @@
 package com.huanchengfly.tieba.post.utils
 
 import android.util.Base64
+import com.huanchengfly.tieba.post.api.ClientVersion
 import com.huanchengfly.tieba.post.api.models.SofireResponseData
 import com.huanchengfly.tieba.post.api.retrofit.RetrofitTiebaApi
 import com.huanchengfly.tieba.post.toMD5
@@ -60,10 +61,10 @@ object SofireUtils {
             "Accept-Language" to Locale.getDefault().language,
             "x-device-id" to cuidMd5,
             "x-client-src" to "src",
-            "User-Agent" to "x6/$appKey/12.35.1.0/4.4.1.3",
+            "User-Agent" to "x6/$appKey/${ClientVersion.TIEBA_V12_POST.version}/4.4.1.3",
             "x-sdk-ver" to "sofire/3.5.9.6",
             "x-plu-ver" to "x6/4.4.1.3",
-            "x-app-ver" to "com.baidu.tieba/12.35.1.0",
+            "x-app-ver" to "com.baidu.tieba/${ClientVersion.TIEBA_V12_POST.version}",
             "x-api-ver" to "33"
         )
         val pathMd5 = listOf(appKey, currTime, secKey).joinToString("").toMD5().lowercase()

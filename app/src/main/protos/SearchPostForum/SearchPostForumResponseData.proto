@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package tieba.searchPostForum;
+
+option java_package = "com.huanchengfly.tieba.post.api.models.protos.searchPostForum";
+
+import "SearchPostForum/SearchForum.proto";
+
+message SearchPostForumResponseData {
+  SearchForum exact_match = 1;
+  repeated SearchForum fuzzy_match = 2;
+}

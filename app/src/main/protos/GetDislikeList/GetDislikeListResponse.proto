@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package tieba.getDislikeList;
+
+option java_package = "com.huanchengfly.tieba.post.api.models.protos.getDislikeList";
+
+import "Error.proto";
+import "GetDislikeList/GetDislikeListResponseData.proto";
+
+message GetDislikeListResponse {
+  Error error = 1;
+  GetDislikeListResponseData data = 2;
+}

@@ -3,7 +3,7 @@ package com.huanchengfly.tieba.post.api
 enum class ClientVersion(val version: String) {
     TIEBA_V11("12.64.1.1"),
     TIEBA_V12("12.64.1.1"),
-    TIEBA_V12_POST("12.35.1.0");
+    TIEBA_V12_POST("12.64.1.1");
 
     override fun toString(): String {
         return version

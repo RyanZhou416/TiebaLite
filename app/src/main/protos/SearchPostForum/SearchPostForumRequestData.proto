@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package tieba.searchPostForum;
+
+option java_package = "com.huanchengfly.tieba.post.api.models.protos.searchPostForum";
+
+import "CommonRequest.proto";
+
+message SearchPostForumRequestData {
+  CommonRequest common = 1;
+  string word = 2;
+}

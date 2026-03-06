@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package tieba.searchPostForum;
+
+option java_package = "com.huanchengfly.tieba.post.api.models.protos.searchPostForum";
+
+import "Error.proto";
+import "SearchPostForum/SearchPostForumResponseData.proto";
+
+message SearchPostForumResponse {
+  Error error = 1;
+  SearchPostForumResponseData data = 2;
+}

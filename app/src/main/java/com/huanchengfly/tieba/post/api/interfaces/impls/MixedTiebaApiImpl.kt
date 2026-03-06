@@ -67,7 +67,16 @@ import com.huanchengfly.tieba.post.api.models.protos.getBawuInfo.GetBawuInfoResp
 import com.huanchengfly.tieba.post.api.models.protos.getForumDetail.GetForumDetailRequest
 import com.huanchengfly.tieba.post.api.models.protos.getForumDetail.GetForumDetailRequestData
 import com.huanchengfly.tieba.post.api.models.protos.getForumDetail.GetForumDetailResponse
+import com.huanchengfly.tieba.post.api.models.protos.getDislikeList.GetDislikeListRequest
+import com.huanchengfly.tieba.post.api.models.protos.getDislikeList.GetDislikeListRequestData
+import com.huanchengfly.tieba.post.api.models.protos.getDislikeList.GetDislikeListResponse
+import com.huanchengfly.tieba.post.api.models.protos.getForumSquare.GetForumSquareRequest
+import com.huanchengfly.tieba.post.api.models.protos.getForumSquare.GetForumSquareRequestData
+import com.huanchengfly.tieba.post.api.models.protos.getForumSquare.GetForumSquareResponse
 import com.huanchengfly.tieba.post.api.models.protos.getHistoryForum.GetHistoryForumRequest
+import com.huanchengfly.tieba.post.api.models.protos.searchPostForum.SearchPostForumRequest
+import com.huanchengfly.tieba.post.api.models.protos.searchPostForum.SearchPostForumRequestData
+import com.huanchengfly.tieba.post.api.models.protos.searchPostForum.SearchPostForumResponse
 import com.huanchengfly.tieba.post.api.models.protos.getHistoryForum.GetHistoryForumRequestData
 import com.huanchengfly.tieba.post.api.models.protos.getHistoryForum.GetHistoryForumResponse
 import com.huanchengfly.tieba.post.api.models.protos.getLevelInfo.GetLevelInfoRequest
@@ -1494,4 +1503,46 @@ object MixedTiebaApiImpl : ITiebaApi {
             )
         )
     }
+
+    override fun getDislikeListFlow(page: Int, rn: Int): Flow<GetDislikeListResponse> =
+        RetrofitTiebaApi.OFFICIAL_PROTOBUF_TIEBA_V12_API.getDislikeListFlow(
+            buildProtobufRequestBody(
+                GetDislikeListRequest(
+                    GetDislikeListRequestData(
+                        common = buildCommonRequest(clientVersion = ClientVersion.TIEBA_V12),
+                        pn = page,
+                        rn = rn,
+                    )
+                ),
+                clientVersion = ClientVersion.TIEBA_V12,
+            )
+        )
+
+    override fun getForumSquareFlow(className: String, page: Int, rn: Int): Flow<GetForumSquareResponse> =
+        RetrofitTiebaApi.OFFICIAL_PROTOBUF_TIEBA_V12_API.getForumSquareFlow(
+            buildProtobufRequestBody(
+                GetForumSquareRequest(
+                    GetForumSquareRequestData(
+                        common = buildCommonRequest(clientVersion = ClientVersion.TIEBA_V12),
+                        class_name = className,
+                        pn = page,
+                        rn = rn,
+                    )
+                ),
+                clientVersion = ClientVersion.TIEBA_V12,
+            )
+        )
+
+    override fun searchPostForumFlow(word: String): Flow<SearchPostForumResponse> =
+        RetrofitTiebaApi.OFFICIAL_PROTOBUF_TIEBA_V12_API.searchPostForumFlow(
+            buildProtobufRequestBody(
+                SearchPostForumRequest(
+                    SearchPostForumRequestData(
+                        common = buildCommonRequest(clientVersion = ClientVersion.TIEBA_V12),
+                        word = word,
+                    )
+                ),
+                clientVersion = ClientVersion.TIEBA_V12,
+            )
+        )
 }

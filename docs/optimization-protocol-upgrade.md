@@ -16,7 +16,7 @@
 | 连接预热 | 已落地 | `App.onCreate()` 已调用预热 |
 | 代理支持 | 已落地 | `SettingsProxySelector` + 设置页已可配置 |
 | 超时参数优化 | 已落地 | `connect=15s/read=30s/write=20s` |
-| 客户端版本升级到 `12.64.1.1` | 部分落地 | `V11`+`V12` 版本号+CommonRequest 已统一；`V12_POST` 保留 `12.35.1.0` |
+| 客户端版本升级到 `12.64.1.1` | 已落地 | `V11`/`V12`/`V12_POST` 均已统一为 `12.64.1.1`（含发帖/回帖/上传） |
 | Multipart Boundary 升级 | 已落地 | 已统一到 `BOUNDARY` 常量，值升级为 `-*_r1999` |
 | JSON -> Protobuf 迁移 | 部分落地 | 21 个端点已走 Protobuf（含 ReplyMe 新迁移）；cmd 全量审计完成 |
 | Protobuf 定义跟新版本对齐 | 部分落地 | Phase 1+2：高频消息 + 共享类型已对齐，PbPage 74-79 新类型已补齐 |
@@ -115,6 +115,31 @@
   - `NotificationsListViewModel.kt` 已切换到 protobuf 路径（含 `ReplyList` → `MessageInfoBean` 数据映射）
   - 旧 JSON 方法 `replyMe()`/`replyMeAsync()`/`replyMeFlow()` 标记 `@Deprecated`
 
+### 已完成（Phase 5 — GetDislikeList 迁移并与 tbclient 对齐）
+
+- `/c/u/user/getDislikeList`（cmd=309692）→ `getDislikeListFlow(page, rn)` — 端到端迁移
+  - 以本地克隆的 [tbclient.protobuf](https://github.com/n0099/tbclient.protobuf) 与 [aiotieba](https://github.com/lumina37/aiotieba) 为参考
+  - 新增 [ForumList.proto](app/src/main/protos/ForumList.proto)，与 tbclient `ForumList` 一致（forum_id、forum_name、avatar、member_count、slogan、content、post_num、thread_num）
+  - Request 与 tbclient DataReq 对齐：`common`、`pn`（int32）、`rn`（int32，默认 20）
+  - Response 与 tbclient DataRes 对齐：`forum_list`（repeated ForumList）、`has_more`、`cur_page`
+  - [OfficialProtobufTiebaApi.kt](app/src/main/java/com/huanchengfly/tieba/post/api/retrofit/interfaces/OfficialProtobufTiebaApi.kt)、[ITiebaApi](app/src/main/java/com/huanchengfly/tieba/post/api/interfaces/ITiebaApi.kt)、[MixedTiebaApiImpl.kt](app/src/main/java/com/huanchengfly/tieba/post/api/interfaces/impls/MixedTiebaApiImpl.kt) 已接好；暂无 UI 调用，接口层可复用
+
+### 已完成（Phase 6 — GetForumSquare 迁移并与 tbclient 对齐）
+
+- `/c/f/forum/getForumSquare`（cmd=309653）→ `getForumSquareFlow(className, page, rn)` — 端到端迁移
+  - 以 tbclient.protobuf GetForumSquare DataReq/DataRes 与 aiotieba get_square_forums 为参考
+  - 新增 [GetForumSquare/](app/src/main/protos/GetForumSquare/) 下 Request/Response proto：common、class_name、pn、rn（及可选 user_id、second_class_name）；Response 含 page_structure、forum_info（RecommendForumInfo）、page、class_name、second_class_list
+  - 复用现有 [RecommendForumInfo.proto](app/src/main/protos/RecommendForumInfo.proto)、[Page.proto](app/src/main/protos/Page.proto)
+  - [OfficialProtobufTiebaApi.kt](app/src/main/java/com/huanchengfly/tieba/post/api/retrofit/interfaces/OfficialProtobufTiebaApi.kt)、[ITiebaApi](app/src/main/java/com/huanchengfly/tieba/post/api/interfaces/ITiebaApi.kt)、[MixedTiebaApiImpl.kt](app/src/main/java/com/huanchengfly/tieba/post/api/interfaces/impls/MixedTiebaApiImpl.kt) 已接好；暂无 UI，接口层可复用（如「吧广场」发现页）
+
+### 已完成（Phase 7 — SearchPostForum 迁移并与 tbclient 对齐）
+
+- `/c/f/forum/searchPostForum`（cmd=309466）→ `searchPostForumFlow(word)` — 端到端迁移（用于 get_tab_map）
+  - 以 tbclient.protobuf SearchPostForum DataReq/DataRes 与 aiotieba get_tab_map 为参考
+  - 新增 [SearchPostForum/](app/src/main/protos/SearchPostForum/) 下 [SearchForum.proto](app/src/main/protos/SearchPostForum/SearchForum.proto)、Request/Response：Request 含 common、word（吧名/关键词）；Response 含 exact_match（SearchForum）、fuzzy_match（repeated SearchForum）；SearchForum 含 forum_id、forum_name、avatar、post_num、concern_num、slogan、intro、has_concerned、tab_info（FrsTabInfo）
+  - 复用现有 [FrsTabInfo.proto](app/src/main/protos/FrsTabInfo.proto)
+  - [OfficialProtobufTiebaApi.kt](app/src/main/java/com/huanchengfly/tieba/post/api/retrofit/interfaces/OfficialProtobufTiebaApi.kt)、[ITiebaApi](app/src/main/java/com/huanchengfly/tieba/post/api/interfaces/ITiebaApi.kt)、[MixedTiebaApiImpl.kt](app/src/main/java/com/huanchengfly/tieba/post/api/interfaces/impls/MixedTiebaApiImpl.kt) 已接好；可替代 get_tab_map 的 JSON 调用
+
 ### 迁移可行性验证
 
 深入分析发现，上游 tbclient.protobuf 中只有 **6 个端点** 有完整 IDL（ReqIdl + ResIdl），其余仅有数据模型定义：
@@ -124,9 +149,9 @@
 | ReplyMe | ✓ | ✓ (303007) | ✓ 已完成 |
 | AgreeMe | ✓ | ✗ | ✗ 待确认 cmd |
 | Search | ✓ | ✗ | ✗ 待确认 cmd |
-| GetDislikeList | ✓ | ✓ (309692) | ✓ 可迁移 |
+| GetDislikeList | ✓ | ✓ (309692) | ✓ 已完成 |
 | Hottopic | ✓ | ✗ | ✗ 待确认 cmd |
-| SearchPostForum | ✓ | ✓ (309466) | 用于 get_tab_map 非搜索 |
+| SearchPostForum | ✓ | ✓ (309466) | ✓ 已完成（get_tab_map） |
 | ReSign / MFollow / SearchFriend 等 | ✗ | — | ✗ 无 IDL |
 
 ### aiotieba cmd 全量审计（Phase 5）
@@ -138,9 +163,9 @@
 | cmd | 端点路径 | 功能 | 备注 |
 |-----|---------|------|------|
 | 303028 | `/c/u/user/userMuteQuery` | 黑名单查询 | 低优先级 |
-| 309466 | `/c/f/forum/searchPostForum` | 搜索标签映射 | 用于 get_tab_map |
-| 309653 | `/c/f/forum/getForumSquare` | 吧广场 | 可新增功能 |
-| 309692 | `/c/u/user/getDislikeList` | 不喜欢的吧列表 | 有完整 IDL |
+| 309466 | `/c/f/forum/searchPostForum` | 搜索标签映射 | 已实现 searchPostForumFlow（get_tab_map） |
+| 309653 | `/c/f/forum/getForumSquare` | 吧广场 | 已实现 getForumSquareFlow |
+| 309692 | `/c/u/user/getDislikeList` | 不喜欢的吧列表 | 已实现 getDislikeListFlow |
 | 309697 | `/c/c/user/setUserBlack` | 设置黑名单 | 操作类 |
 | 309702 | `/c/u/user/getUserByTiebaUid` | UID转用户信息 | 工具类 |
 
@@ -152,8 +177,9 @@
 
 | 端点路径 | 函数名 | cmd | 分类 |
 |---------|--------|-----|------|
-| `/c/u/user/getDislikeList` | — (新增) | 309692 | 推荐不感兴趣 |
-| `/c/f/forum/getForumSquare` | — (新增) | 309653 | 吧广场发现 |
+| `/c/u/user/getDislikeList` | getDislikeListFlow（已完成） | 309692 | 推荐不感兴趣 |
+| `/c/f/forum/getForumSquare` | getForumSquareFlow（已完成） | 309653 | 吧广场发现 |
+| `/c/f/forum/searchPostForum` | searchPostForumFlow（已完成） | 309466 | get_tab_map |
 | `/c/u/feed/agreeme` | agreeMe | 未知 | 消息-点赞 |
 
 **暂不迁移**（无 Proto 定义或纯操作类）：
@@ -171,7 +197,7 @@
 
 ## 3.1 客户端版本统一升级
 
-**状态：部分落地**  
+**状态：已落地**  
 **影响：高（协议兼容与风控指纹）**  
 **难度：中**
 
@@ -181,7 +207,7 @@
 enum class ClientVersion(val version: String) {
     TIEBA_V11("12.64.1.1"),       // Phase 3 升级（原 11.10.8.6）
     TIEBA_V12("12.64.1.1"),       // Phase 1 已升级（原 12.52.1.0）
-    TIEBA_V12_POST("12.35.1.0");  // 与 aiotieba 发帖版本一致，暂保留
+    TIEBA_V12_POST("12.64.1.1");  // Phase 5 已统一（原 12.35.1.0，发帖/回帖/上传链路）
 }
 ```
 
@@ -212,9 +238,14 @@ enum class ClientVersion(val version: String) {
 - `ProtobufRequest.kt` 清理了 `OAID`、`toJson` 等不再使用的 import
 - V12_POST 分支保持独立（`android_id` 不做 base64、含 `applist`/`device_score`/`tbs`）
 
-### 剩余工作
+### 已完成（Phase 5 — V12_POST 版本号统一到 12.64.1.1）
 
-- `TIEBA_V12_POST`（`12.35.1.0`）用于发帖链路，aiotieba 也使用此版本，改动风险较高
+- `TIEBA_V12_POST` 从 `12.35.1.0` 升级到 `12.64.1.1`，发帖/回帖/楼中楼/上传均使用统一版本号
+- [Enums.kt](app/src/main/java/com/huanchengfly/tieba/post/api/Enums.kt) 中枚举值已修改；[RetrofitTiebaApi.kt](app/src/main/java/com/huanchengfly/tieba/post/api/retrofit/RetrofitTiebaApi.kt)（OFFICIAL_PROTOBUF_TIEBA_POST_API、HYBRID_TIEBA_API）、[SofireUtils.kt](app/src/main/java/com/huanchengfly/tieba/post/utils/SofireUtils.kt) 中版本号均引用 `ClientVersion.TIEBA_V12_POST.version`，无硬编码残留
+- 建议按文档第 7 节验收清单对发帖/回帖/上传图片链路做一次回归
+
+### 说明
+
 - `TIEBA_V11` 枚举值仍保留，作为 JSON 端点默认版本的语义别名
 - 保证以下字段链路一致：`ClientVersion`、`CommonRequest`、`User-Agent`、`_client_version`
 
@@ -330,7 +361,7 @@ enum class ClientVersion(val version: String) {
 - 超时优化
 - 部分预取增强与分页参数优化
 
-本文件聚焦协议层剩余问题：**V11/V12_POST 版本号数值升级、JSON-only 端点迁移、proto 定义升级**。
+本文件聚焦协议层剩余问题：**JSON-only 端点迁移、proto 定义升级**（客户端版本已统一到 12.64.1.1）。
 
 ---
 
@@ -343,7 +374,7 @@ enum class ClientVersion(val version: String) {
 | ~~3~~ | ~~V11/V12 CommonRequest 合并~~ | ✅ 已落地 | 代码简化、协议一致 | — |
 | 4 | JSON 接口分批迁移 Protobuf | ReplyMe 已迁移；cmd 审计完成 | 性能、一致性 | 中 |
 | 5 | Protobuf 定义对齐升级 | Phase 1+2 已完成 | 剩余为低优先级字段 | 低 |
-| 6 | V12_POST 版本号升级 | 未落地 | 发帖指纹一致性 | 高 |
+| ~~6~~ | ~~V12_POST 版本号升级~~ | ✅ 已落地（12.64.1.1） | 发帖指纹一致性 | — |
 | 7 | WebSocket 预研 | 未落地 | 实时推送能力 | 高 |
 
 ---

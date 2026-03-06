@@ -6,7 +6,10 @@ import com.huanchengfly.tieba.post.api.models.protos.forumRuleDetail.ForumRuleDe
 import com.huanchengfly.tieba.post.api.models.protos.frsPage.FrsPageResponse
 import com.huanchengfly.tieba.post.api.models.protos.getBawuInfo.GetBawuInfoResponse
 import com.huanchengfly.tieba.post.api.models.protos.getForumDetail.GetForumDetailResponse
+import com.huanchengfly.tieba.post.api.models.protos.getDislikeList.GetDislikeListResponse
+import com.huanchengfly.tieba.post.api.models.protos.getForumSquare.GetForumSquareResponse
 import com.huanchengfly.tieba.post.api.models.protos.getHistoryForum.GetHistoryForumResponse
+import com.huanchengfly.tieba.post.api.models.protos.searchPostForum.SearchPostForumResponse
 import com.huanchengfly.tieba.post.api.models.protos.replyMe.ReplyMeResponse
 import com.huanchengfly.tieba.post.api.models.protos.getLevelInfo.GetLevelInfoResponse
 import com.huanchengfly.tieba.post.api.models.protos.getMemberInfo.GetMemberInfoResponse
@@ -133,4 +136,19 @@ interface OfficialProtobufTiebaApi {
     fun replyMeFlow(
         @Body body: MyMultipartBody,
     ): Flow<ReplyMeResponse>
+
+    @POST("/c/u/user/getDislikeList?cmd=309692")
+    fun getDislikeListFlow(
+        @Body body: MyMultipartBody,
+    ): Flow<GetDislikeListResponse>
+
+    @POST("/c/f/forum/getForumSquare?cmd=309653")
+    fun getForumSquareFlow(
+        @Body body: MyMultipartBody,
+    ): Flow<GetForumSquareResponse>
+
+    @POST("/c/f/forum/searchPostForum?cmd=309466")
+    fun searchPostForumFlow(
+        @Body body: MyMultipartBody,
+    ): Flow<SearchPostForumResponse>
 }

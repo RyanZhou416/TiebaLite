@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package tieba.getDislikeList;
+
+option java_package = "com.huanchengfly.tieba.post.api.models.protos.getDislikeList";
+
+import "ForumList.proto";
+
+message GetDislikeListResponseData {
+  repeated ForumList forum_list = 1;
+  int32 has_more = 2;
+  int32 cur_page = 3;
+}
