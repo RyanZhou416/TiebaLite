@@ -59,6 +59,7 @@ import kotlin.math.roundToInt
 @Composable
 private fun ViewPhoto(
     imageUri: String,
+    thumbnailUri: String? = null,
     modifier: Modifier = Modifier,
     onTap: (offset: Offset) -> Unit = {},
 ) {
@@ -78,6 +79,16 @@ private fun ViewPhoto(
                 state.loadState is LoadState.Started
             }
         }
+
+        if (thumbnailUri != null && thumbnailUri != imageUri) {
+            com.github.panpf.sketch.AsyncImage(
+                uri = thumbnailUri,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+            )
+        }
+
         SketchZoomAsyncImage(
             uri = imageUri,
             contentDescription = null,
@@ -126,6 +137,16 @@ class PhotoViewActivity : BaseComposeActivityWithParcelable<PhotoViewData>() {
         val loadPicPageData by remember { derivedStateOf { uiState.loadPicPageData } }
         val loaded by remember { derivedStateOf { uiState.data.isNotEmpty() } }
 
+        LaunchedEffect(loaded) {
+            if (loaded) {
+                WindowInsetsControllerCompat(window, window.decorView).apply {
+                    hide(WindowInsetsCompat.Type.systemBars())
+                    systemBarsBehavior =
+                        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                }
+            }
+        }
+
         Surface(color = Color.Black) {
             if (loaded) {
                 val pageCount by remember { derivedStateOf { items.size } }
@@ -166,6 +187,7 @@ class PhotoViewActivity : BaseComposeActivityWithParcelable<PhotoViewData>() {
                         val item = items[it]
                         ViewPhoto(
                             imageUri = item.originUrl,
+                            thumbnailUri = item.url,
                             modifier = Modifier.fillMaxSize(),
                             onTap = {
                                 finish()
@@ -255,10 +277,6 @@ class PhotoViewActivity : BaseComposeActivityWithParcelable<PhotoViewData>() {
     }
 
     override fun onCreateContent() {
-        WindowInsetsControllerCompat(window, window.decorView).apply {
-            hide(WindowInsetsCompat.Type.systemBars())
-            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        }
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {

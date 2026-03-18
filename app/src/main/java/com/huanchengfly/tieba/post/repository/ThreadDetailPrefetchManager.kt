@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import com.huanchengfly.tieba.post.utils.PerformanceTracker
 import java.util.concurrent.ConcurrentHashMap
 
 object ThreadDetailPrefetchManager {
@@ -49,6 +50,7 @@ object ThreadDetailPrefetchManager {
         }
         if (inFlight.containsKey(threadId)) return
 
+        PerformanceTracker.recordPrefetchRequest()
         val job = scope.launch {
             semaphore.withPermit {
                 try {
@@ -76,8 +78,10 @@ object ThreadDetailPrefetchManager {
             val entry = cache[threadId] ?: return null
             if (entry.isExpired()) {
                 cache.remove(threadId)
+                PerformanceTracker.recordPrefetchMiss()
                 return null
             }
+            PerformanceTracker.recordPrefetchHit()
             return entry.response
         }
     }

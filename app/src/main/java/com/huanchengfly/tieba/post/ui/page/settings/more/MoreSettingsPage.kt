@@ -37,6 +37,7 @@ import com.huanchengfly.tieba.post.ui.common.prefs.widgets.ListPref
 import com.huanchengfly.tieba.post.ui.common.prefs.widgets.SwitchPref
 import com.huanchengfly.tieba.post.ui.common.prefs.widgets.TextPref
 import com.huanchengfly.tieba.post.ui.page.destinations.AboutPageDestination
+import com.huanchengfly.tieba.post.ui.page.destinations.PerformanceDebugPageDestination
 import com.huanchengfly.tieba.post.ui.page.settings.LeadingIcon
 import com.huanchengfly.tieba.post.ui.widgets.compose.AvatarIcon
 import com.huanchengfly.tieba.post.ui.widgets.compose.BackNavigationIcon
@@ -268,6 +269,27 @@ fun MoreSettingsPage(
                     },
                     summary = stringResource(id = R.string.tip_about, BuildConfig.VERSION_NAME)
                 )
+            }
+            if (BuildConfig.DEBUG) {
+                prefsItem {
+                    TextPref(
+                        leadingIcon = {
+                            LeadingIcon {
+                                AvatarIcon(
+                                    icon = Icons.Outlined.BugReport,
+                                    size = Sizes.Small,
+                                    contentDescription = null,
+                                )
+                            }
+                        },
+                        enabled = true,
+                        title = "性能调试",
+                        onClick = {
+                            navigator.navigate(PerformanceDebugPageDestination)
+                        },
+                        summary = "查看网络延迟、缓存命中率、预加载效果"
+                    )
+                }
             }
         }
     }

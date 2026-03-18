@@ -10,6 +10,20 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 object FrsPageRepository {
+    private const val MAX_CACHE_SIZE = 8
+
+    private val responseCache = object : LinkedHashMap<String, FrsPageResponse>(
+        MAX_CACHE_SIZE + 1, 0.75f, true
+    ) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, FrsPageResponse>?): Boolean =
+            size > MAX_CACHE_SIZE
+    }
+
+    fun getCachedResponse(forumName: String, sortType: Int, goodClassifyId: Int?): FrsPageResponse? {
+        val key = "${forumName}_${sortType}_${goodClassifyId}"
+        return synchronized(responseCache) { responseCache[key] }
+    }
+
     fun frsPage(
         forumName: String,
         page: Int,
@@ -21,14 +35,19 @@ object FrsPageRepository {
             .frsPage(forumName, page, loadType, sortType, goodClassifyId)
             .map { response ->
                 if (response.data_ == null) throw TiebaUnknownException
-                val userList = response.data_.user_list
+                val userMap = response.data_.user_list.associateBy { it.id }
                 val threadList = response.data_.thread_list
                     .map { threadInfo ->
-                        threadInfo.copy(author = userList.find { it.id == threadInfo.authorId })
+                        threadInfo.copy(author = userMap[threadInfo.authorId])
                     }
                     .filter { !App.INSTANCE.appPreferences.blockVideo || it.videoInfo == null }
                     .filter { it.ala_info == null }
-                response.copy(data_ = response.data_.copy(thread_list = threadList))
+                val result = response.copy(data_ = response.data_.copy(thread_list = threadList))
+                if (page == 1) {
+                    val key = "${forumName}_${sortType}_${goodClassifyId}"
+                    synchronized(responseCache) { responseCache[key] = result }
+                }
+                result
             }
 
     fun threadList(
@@ -42,10 +61,10 @@ object FrsPageRepository {
             .threadList(forumId, forumName, page, sortType, threadIds)
             .map { response ->
                 if (response.data_ == null) throw TiebaUnknownException
-                val userList = response.data_.user_list
+                val userMap = response.data_.user_list.associateBy { it.id }
                 val threadList = response.data_.thread_list
                     .map { threadInfo ->
-                        threadInfo.copy(author = userList.find { it.id == threadInfo.authorId })
+                        threadInfo.copy(author = userMap[threadInfo.authorId])
                     }
                     .filter { !App.INSTANCE.appPreferences.blockVideo || it.videoInfo == null }
                     .filter { it.ala_info == null }

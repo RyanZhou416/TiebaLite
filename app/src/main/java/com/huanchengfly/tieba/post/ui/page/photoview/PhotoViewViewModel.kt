@@ -46,7 +46,7 @@ class PhotoViewViewModel :
                 PhotoViewItem(
                     picId = it.img.original.id,
                     originUrl = it.img.original.originalSrc,
-                    url = if (it.showOriginalBtn) it.img.original.bigCdnSrc else null,
+                    url = it.img.original.bigCdnSrc.takeIf { url -> url.isNotEmpty() },
                     overallIndex = it.overAllIndex.toInt(),
                     postId = it.postId?.toLongOrNull()
                 )
@@ -103,75 +103,79 @@ class PhotoViewViewModel :
                     emit(PhotoViewPartialChange.LoadMore.Failure(it))
                 }
 
+        private fun PhotoViewData.toLocalItems(): List<PhotoViewItem> =
+            picItems.mapIndexed { index, item ->
+                PhotoViewItem(
+                    picId = item.picId,
+                    originUrl = item.originUrl,
+                    url = item.url.takeIf { it != item.originUrl },
+                    overallIndex = index + 1,
+                    postId = item.postId
+                )
+            }
+
         private fun PhotoViewUiIntent.Init.producePartialChange(): Flow<PhotoViewPartialChange.Init> {
-            val flow = if (data.data == null) {
-                flowOf(
-                    PhotoViewPartialChange.Init.Success(
-                        items = data.picItems.mapIndexed { index, item ->
+            val localItems = data.toLocalItems()
+            val localResult = PhotoViewPartialChange.Init.Success(
+                items = localItems,
+                hasNext = false,
+                hasPrev = false,
+                totalAmount = data.picItems.size,
+                initialIndex = data.index,
+                loadPicPageData = null
+            )
+
+            if (data.data == null) {
+                return flowOf(localResult)
+            }
+
+            return TiebaApi.getInstance()
+                .picPageFlow(
+                    forumId = data.data.forumId.toString(),
+                    forumName = data.data.forumName,
+                    threadId = data.data.threadId.toString(),
+                    seeLz = data.data.seeLz,
+                    picId = data.data.picId,
+                    picIndex = data.data.picIndex.toString(),
+                    objType = data.data.objType,
+                    prev = false
+                )
+                .map<PicPageBean, PhotoViewPartialChange.Init> { picPageBean ->
+                    val picAmount = picPageBean.picAmount.toInt()
+                    val fetchedItems = picPageBean.picList.toPhotoViewItems()
+                    val firstItemIndex = fetchedItems.first().overallIndex
+                    val prevItems =
+                        if (data.data.picIndex == 1) emptyList() else data.picItems.subList(
+                            0,
+                            data.data.picIndex - 1
+                        ).mapIndexed { index, item ->
                             PhotoViewItem(
                                 picId = item.picId,
                                 originUrl = item.originUrl,
-                                url = if (item.showOriginBtn) item.url else null,
-                                overallIndex = index + 1,
+                                url = item.url.takeIf { it != item.originUrl },
+                                overallIndex = firstItemIndex - (data.data.picIndex - 1 - index),
                                 postId = item.postId
                             )
-                        },
-                        hasNext = false,
-                        hasPrev = false,
-                        totalAmount = data.picItems.size,
-                        initialIndex = data.index,
-                        loadPicPageData = null
+                        }
+                    val items = prevItems + fetchedItems
+                    val hasNext = items.last().overallIndex < picAmount
+                    val hasPrev = items.first().overallIndex > 1
+                    val initialIndex =
+                        items.indexOfFirst { it.picId == data.data.picId }.takeIf { it != -1 }
+                            ?: (data.data.picIndex - 1)
+                    PhotoViewPartialChange.Init.Success(
+                        hasPrev = hasPrev,
+                        hasNext = hasNext,
+                        totalAmount = picAmount,
+                        items = items,
+                        initialIndex = initialIndex,
+                        loadPicPageData = data.data
                     )
-                )
-            } else {
-                TiebaApi.getInstance()
-                    .picPageFlow(
-                        forumId = data.data.forumId.toString(),
-                        forumName = data.data.forumName,
-                        threadId = data.data.threadId.toString(),
-                        seeLz = data.data.seeLz,
-                        picId = data.data.picId,
-                        picIndex = data.data.picIndex.toString(),
-                        objType = data.data.objType,
-                        prev = false
-                    )
-                    .map<PicPageBean, PhotoViewPartialChange.Init> { picPageBean ->
-                        val picAmount = picPageBean.picAmount.toInt()
-                        val fetchedItems = picPageBean.picList.toPhotoViewItems()
-                        val firstItemIndex = fetchedItems.first().overallIndex
-                        val localItems =
-                            if (data.data.picIndex == 1) emptyList() else data.picItems.subList(
-                                0,
-                                data.data.picIndex - 1
-                            ).mapIndexed { index, item ->
-                                PhotoViewItem(
-                                    picId = item.picId,
-                                    originUrl = item.originUrl,
-                                    url = if (item.showOriginBtn) item.url else null,
-                                    overallIndex = firstItemIndex - (data.data.picIndex - 1 - index),
-                                    postId = item.postId
-                                )
-                            }
-                        val items = localItems + fetchedItems
-                        val hasNext = items.last().overallIndex < picAmount
-                        val hasPrev = items.first().overallIndex > 1
-                        val initialIndex =
-                            items.indexOfFirst { it.picId == data.data.picId }.takeIf { it != -1 }
-                                ?: (data.data.picIndex - 1)
-                        PhotoViewPartialChange.Init.Success(
-                            hasPrev = hasPrev,
-                            hasNext = hasNext,
-                            totalAmount = picAmount,
-                            items = items,
-                            initialIndex = initialIndex,
-                            loadPicPageData = data.data
-                        )
-                    }
-                    .catch {
-                        emit(PhotoViewPartialChange.Init.Failure(data, it))
-                    }
-            }
-            return flow
+                }
+                .onStart { emit(localResult) }
+                .catch {
+                    emit(PhotoViewPartialChange.Init.Failure(data, it))
+                }
         }
     }
 }
@@ -212,7 +216,7 @@ sealed interface PhotoViewPartialChange : PartialChange<PhotoViewUiState> {
                             PhotoViewItem(
                                 picId = item.picId,
                                 originUrl = item.originUrl,
-                                url = if (item.showOriginBtn) item.url else null,
+                                url = item.url.takeIf { it != item.originUrl },
                                 overallIndex = index + 1
                             )
                         }.toImmutableList(),

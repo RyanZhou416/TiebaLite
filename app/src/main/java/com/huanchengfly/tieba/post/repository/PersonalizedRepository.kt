@@ -1,11 +1,16 @@
 package com.huanchengfly.tieba.post.repository
 
 import com.huanchengfly.tieba.post.api.TiebaApi
+import com.huanchengfly.tieba.post.api.models.protos.personalized.PersonalizedResponse
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 
 object PersonalizedRepository {
+
+    @Volatile
+    private var cachedResponse: PersonalizedResponse? = null
+
     /**
      * 个性推荐
      *
@@ -20,7 +25,7 @@ object PersonalizedRepository {
                     val liveThreadIds =
                         response.data_?.thread_list?.filter { it.ala_info != null }
                             ?.map { it.id } ?: emptyList()
-                    response.copy(
+                    val filtered = response.copy(
                         data_ = response.data_?.copy(
                             thread_list = response.data_.thread_list.filter {
                                 !liveThreadIds.contains(it.id)
@@ -30,7 +35,13 @@ object PersonalizedRepository {
                             }
                         )
                     )
+                    if (loadType == 1 && page == 1) {
+                        cachedResponse = filtered
+                    }
+                    filtered
                 }
         )
     }
+
+    fun getCachedResponse(): PersonalizedResponse? = cachedResponse
 }

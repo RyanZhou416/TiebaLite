@@ -99,7 +99,11 @@ android {
                     signingConfigs.getByName("config")
                 else signingConfigs.getByName("debug")
         }
+        debug {
+            versionNameSuffix = "-debug"
+        }
         release {
+            versionNameSuffix = "-release"
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

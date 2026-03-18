@@ -17,6 +17,7 @@ import com.huanchengfly.tieba.post.api.buildProtobufRequestBody
 import com.huanchengfly.tieba.post.api.getScreenHeight
 import com.huanchengfly.tieba.post.api.getScreenWidth
 import com.huanchengfly.tieba.post.api.interfaces.ITiebaApi
+import com.huanchengfly.tieba.post.repository.AdaptivePrefetchManager
 import com.huanchengfly.tieba.post.api.models.AgreeBean
 import com.huanchengfly.tieba.post.api.models.CheckReportBean
 import com.huanchengfly.tieba.post.api.models.CollectDataBean
@@ -169,7 +170,7 @@ object MixedTiebaApiImpl : ITiebaApi {
                         load_type = loadType,
                         pn = page,
                         need_tags = 0,
-                        page_thread_count = 11,
+                        page_thread_count = AdaptivePrefetchManager.pageThreadCount,
                         pre_ad_thread_count = 0,
                         sug_count = 0,
                         tag_code = 0,

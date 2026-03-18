@@ -127,6 +127,7 @@ data class PicContentRender(
     val width: Int,
     val height: Int,
     val picId: String,
+    val thumbnailUrl: String = "",
     val photoViewData: PhotoViewData? = null,
 ) : PbContentRender {
     @Composable
@@ -143,7 +144,8 @@ data class PicContentRender(
                 .fillMaxWidth(widthFraction)
                 .aspectRatio(width * 1f / height),
             photoViewData = photoViewData,
-            contentScale = ContentScale.Crop
+            contentScale = ContentScale.Crop,
+            thumbnailUri = thumbnailUrl.takeIf { it.isNotEmpty() }
         )
     }
 

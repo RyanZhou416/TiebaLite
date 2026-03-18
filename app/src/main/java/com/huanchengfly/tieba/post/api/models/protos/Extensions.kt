@@ -270,7 +270,8 @@ val List<PbContent>.renders: ImmutableList<PbContentRender>
                             originSize = it.originSize,
                             picId = ImageUtil.getPicId(it.originSrc),
                             width = width,
-                            height = height
+                            height = height,
+                            thumbnailUrl = it.src.takeIf { url -> url.isNotEmpty() } ?: it.cdnSrc,
                         )
                     )
                 }

@@ -4,6 +4,8 @@ import android.content.Context
 import android.os.Looper
 import android.text.TextUtils
 import com.github.panpf.sketch.sketch
+import com.huanchengfly.tieba.post.repository.ImagePrefetchManager
+import com.huanchengfly.tieba.post.repository.ThreadDetailPrefetchManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -55,6 +57,9 @@ object ImageCacheUtil {
             context.externalCacheDir.toString() + File.separator + DEFAULT_DISK_CACHE_DIR
         deleteFolderFile(imageExternalCacheDir, false)
         deleteFolderFile(context.cacheDir.toString() + File.separator + ".shareTemp", false)
+        deleteFolderFile(context.cacheDir.toString() + File.separator + "http_cache", false)
+        ThreadDetailPrefetchManager.clear()
+        ImagePrefetchManager.clear()
     }
 
     /**
@@ -71,8 +76,9 @@ object ImageCacheUtil {
                 )
             ).toDouble()
             val shareCacheSize = getFolderSize(File(context.cacheDir, ".shareTemp")).toDouble()
+            val httpCacheSize = getFolderSize(File(context.cacheDir, "http_cache")).toDouble()
             val sketchCacheSize = context.sketch.run { downloadCache.size + resultCache.size }
-            return getFormatSize(glideCacheSize + shareCacheSize + sketchCacheSize)
+            return getFormatSize(glideCacheSize + shareCacheSize + httpCacheSize + sketchCacheSize)
         } catch (e: Exception) {
             e.printStackTrace()
         }

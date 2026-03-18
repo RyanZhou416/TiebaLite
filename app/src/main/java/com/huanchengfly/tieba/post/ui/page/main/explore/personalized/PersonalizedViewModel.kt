@@ -10,6 +10,7 @@ import com.huanchengfly.tieba.post.api.models.protos.personalized.DislikeReason
 import com.huanchengfly.tieba.post.api.models.protos.personalized.PersonalizedResponse
 import com.huanchengfly.tieba.post.api.retrofit.exception.getErrorMessage
 import com.huanchengfly.tieba.post.arch.BaseViewModel
+import com.huanchengfly.tieba.post.utils.PerformanceTracker
 import com.huanchengfly.tieba.post.arch.CommonUiEvent
 import com.huanchengfly.tieba.post.arch.ImmutableHolder
 import com.huanchengfly.tieba.post.arch.PartialChange
@@ -41,7 +42,35 @@ import javax.inject.Inject
 @HiltViewModel
 class PersonalizedViewModel @Inject constructor() :
     BaseViewModel<PersonalizedUiIntent, PersonalizedPartialChange, PersonalizedUiState, PersonalizedUiEvent>() {
-    override fun createInitialState(): PersonalizedUiState = PersonalizedUiState()
+    override fun createInitialState(): PersonalizedUiState {
+        val cached = PersonalizedRepository.getCachedResponse()
+        if (cached != null) {
+            val data = cached.toData()
+                .filter {
+                    !App.INSTANCE.appPreferences.blockVideo || it.get { videoInfo } == null
+                }
+                .filter { it.get { ala_info } == null }
+            val threadPersonalizedData = cached.data_?.thread_personalized ?: emptyList()
+            val items = data.map { thread ->
+                val threadPersonalized =
+                    threadPersonalizedData.firstOrNull { it.tid == thread.get { id } }
+                        ?.wrapImmutable()
+                ThreadItemData(thread = thread, personalized = threadPersonalized)
+            }.toImmutableList()
+            if (items.isNotEmpty()) {
+                PerformanceTracker.recordPersonalizedCacheHit()
+                return PersonalizedUiState(data = items, isRefreshing = true)
+            }
+        }
+        PerformanceTracker.recordPersonalizedCacheMiss()
+        return PersonalizedUiState()
+    }
+
+    private companion object {
+        fun PersonalizedResponse.toData(): List<ImmutableHolder<ThreadInfo>> {
+            return (data_?.thread_list ?: emptyList()).wrapImmutable()
+        }
+    }
 
     override fun createPartialChangeProducer(): PartialChangeProducer<PersonalizedUiIntent, PersonalizedPartialChange, PersonalizedUiState> =
         ExplorePartialChangeProducer

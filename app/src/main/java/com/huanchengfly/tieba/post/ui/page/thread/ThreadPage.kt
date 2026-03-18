@@ -114,6 +114,7 @@ import com.huanchengfly.tieba.post.arch.onGlobalEvent
 import com.huanchengfly.tieba.post.arch.pageViewModel
 import com.huanchengfly.tieba.post.arch.wrapImmutable
 import com.huanchengfly.tieba.post.models.ThreadHistoryInfoBean
+import com.huanchengfly.tieba.post.repository.ImagePrefetchManager
 import com.huanchengfly.tieba.post.models.database.History
 import com.huanchengfly.tieba.post.toJson
 import com.huanchengfly.tieba.post.toastShort
@@ -649,19 +650,38 @@ fun ThreadPage(
         initialValue = ModalBottomSheetValue.Hidden,
         skipHalfExpanded = true
     )
+    val postById = remember(data) {
+        data.associateBy { it.post.get { id } }
+    }
     val lastVisibilityPost by remember {
         derivedStateOf {
-            data.firstOrNull { (post) ->
-                val lastPostKey = lazyListState.layoutInfo.visibleItemsInfo.lastOrNull { info ->
-                    info.key is String && (info.key as String).startsWith("Post_")
-                }?.key as String?
-                lastPostKey?.endsWith(post.get { id }.toString()) == true
-            }?.post ?: firstPost
+            val lastPostKey = lazyListState.layoutInfo.visibleItemsInfo.lastOrNull { info ->
+                info.key is String && (info.key as String).startsWith("Post_")
+            }?.key as String?
+            val postId = lastPostKey?.removePrefix("Post_")?.toLongOrNull()
+            postId?.let { postById[it]?.post } ?: firstPost
         }
     }
     val lastVisibilityPostId by remember {
         derivedStateOf { lastVisibilityPost?.get { id } ?: 0L }
     }
+
+    val lastVisibleIndex by remember {
+        derivedStateOf {
+            lazyListState.layoutInfo.visibleItemsInfo.lastOrNull { info ->
+                info.key is String && (info.key as String).startsWith("Post_")
+            }?.index ?: 0
+        }
+    }
+    LaunchedEffect(lastVisibleIndex, data.size) {
+        if (data.isNotEmpty()) {
+            ImagePrefetchManager.prefetchImagesForPosts(
+                allRenders = data.map { it.contentRenders },
+                currentVisibleEnd = lastVisibleIndex
+            )
+        }
+    }
+
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     val openBottomSheet = {
@@ -915,6 +935,52 @@ fun ThreadPage(
         }
     )
 
+    val stableOnUserClick = remember<(com.huanchengfly.tieba.post.api.models.protos.User) -> Unit>(navigator) {
+        { navigator.navigate(UserProfilePageDestination(it.id)) }
+    }
+    val stableOnReplyClick = remember<(Post) -> Unit>(navigator, curForumId, forum, threadId) {
+        {
+            navigator.navigate(
+                ReplyPageDestination(
+                    forumId = curForumId ?: 0,
+                    forumName = forum?.get { name } ?: "",
+                    threadId = threadId,
+                    postId = it.id,
+                    replyUserId = it.author?.id ?: it.author_id,
+                    replyUserName = it.author?.nameShow.takeIf { name -> !name.isNullOrEmpty() }
+                        ?: it.author?.name,
+                    replyUserPortrait = it.author?.portrait,
+                )
+            )
+        }
+    }
+    val stableOnSubPostReplyClick = remember<(Post, com.huanchengfly.tieba.post.api.models.protos.SubPostList) -> Unit>(navigator, curForumId, forum, threadId) {
+        { post, subPost ->
+            navigator.navigate(
+                ReplyPageDestination(
+                    forumId = curForumId ?: 0,
+                    forumName = forum?.get { name } ?: "",
+                    threadId = threadId,
+                    postId = post.id,
+                    subPostId = subPost.id,
+                    replyUserId = subPost.author?.id ?: subPost.author_id,
+                    replyUserName = subPost.author?.nameShow.takeIf { name -> !name.isNullOrEmpty() }
+                        ?: subPost.author?.name,
+                    replyUserPortrait = subPost.author?.portrait,
+                )
+            )
+        }
+    }
+    val stableOnMenuCopyClick = remember<(String) -> Unit>(navigator) {
+        { navigator.navigate(CopyTextDialogPageDestination(it)) }
+    }
+    val stableOnMenuDeleteClick = remember<(Post) -> Unit> {
+        {
+            deletePost = it.wrapImmutable()
+            confirmDeleteDialogState.show()
+        }
+    }
+
     @Composable
     fun PostCard(
         item: ImmutableHolder<Post>,
@@ -931,9 +997,7 @@ fun ThreadPage(
             canDelete = { it.author_id == user.get { id } },
             immersiveMode = isImmersiveMode,
             isCollected = { it.id == thread?.get { collectMarkPid.toLongOrNull() } },
-            onUserClick = {
-                navigator.navigate(UserProfilePageDestination(it.id))
-            },
+            onUserClick = stableOnUserClick,
             onAgree = {
                 val postHasAgreed =
                     item.get { agree?.hasAgree == 1 }
@@ -945,35 +1009,8 @@ fun ThreadPage(
                     )
                 )
             },
-            onReplyClick = {
-                navigator.navigate(
-                    ReplyPageDestination(
-                        forumId = curForumId ?: 0,
-                        forumName = forum?.get { name } ?: "",
-                        threadId = threadId,
-                        postId = it.id,
-                        replyUserId = it.author?.id ?: it.author_id,
-                        replyUserName = it.author?.nameShow.takeIf { name -> !name.isNullOrEmpty() }
-                            ?: it.author?.name,
-                        replyUserPortrait = it.author?.portrait,
-                    )
-                )
-            },
-            onSubPostReplyClick = { post, subPost ->
-                navigator.navigate(
-                    ReplyPageDestination(
-                        forumId = curForumId ?: 0,
-                        forumName = forum?.get { name } ?: "",
-                        threadId = threadId,
-                        postId = post.id,
-                        subPostId = subPost.id,
-                        replyUserId = subPost.author?.id ?: subPost.author_id,
-                        replyUserName = subPost.author?.nameShow.takeIf { name -> !name.isNullOrEmpty() }
-                            ?: subPost.author?.name,
-                        replyUserPortrait = subPost.author?.portrait,
-                    )
-                )
-            },
+            onReplyClick = stableOnReplyClick,
+            onSubPostReplyClick = stableOnSubPostReplyClick,
             onOpenSubPosts = {
                 if (curForumId != null) {
                     navigator.navigate(
@@ -987,11 +1024,7 @@ fun ThreadPage(
                     )
                 }
             },
-            onMenuCopyClick = {
-                navigator.navigate(
-                    CopyTextDialogPageDestination(it)
-                )
-            },
+            onMenuCopyClick = stableOnMenuCopyClick,
             onMenuFavoriteClick = {
                 val isPostCollected =
                     it.id == thread?.get { collectMarkPid.toLongOrNull() }
@@ -1017,10 +1050,7 @@ fun ThreadPage(
                     }
                 }
             },
-            onMenuDeleteClick = {
-                deletePost = it.wrapImmutable()
-                confirmDeleteDialogState.show()
-            },
+            onMenuDeleteClick = stableOnMenuDeleteClick,
         )
     }
 
@@ -1049,7 +1079,14 @@ fun ThreadPage(
             }
             items(
                 items = latestPosts,
-                key = { (item) -> "LatestPost_${item.get { id }}" }
+                key = { (item) -> "LatestPost_${item.get { id }}" },
+                contentType = { (_, _, renders, subPosts) ->
+                    when {
+                        subPosts.isNotEmpty() -> "PostWithSub"
+                        renders.any { it is com.huanchengfly.tieba.post.ui.common.PicContentRender } -> "PostWithPic"
+                        else -> "PostText"
+                    }
+                }
             ) { (item, blocked, renders, subPosts) ->
                 Container {
                     PostCard(
@@ -1569,7 +1606,14 @@ fun ThreadPage(
                                 } else {
                                     items(
                                         items = data,
-                                        key = { (item) -> "Post_${item.get { id }}" }
+                                        key = { (item) -> "Post_${item.get { id }}" },
+                                        contentType = { (_, _, renders, subPosts) ->
+                                            when {
+                                                subPosts.isNotEmpty() -> "PostWithSub"
+                                                renders.any { it is com.huanchengfly.tieba.post.ui.common.PicContentRender } -> "PostWithPic"
+                                                else -> "PostText"
+                                            }
+                                        }
                                     ) { (item, blocked, renders, subPosts) ->
                                         Container {
                                             PostCard(

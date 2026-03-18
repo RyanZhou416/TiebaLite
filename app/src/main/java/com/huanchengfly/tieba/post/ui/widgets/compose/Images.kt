@@ -230,6 +230,7 @@ fun NetworkImage(
     contentScale: ContentScale = ContentScale.Fit,
     skipNetworkCheck: Boolean = false,
     enablePreview: Boolean = false,
+    thumbnailUri: String? = null,
 ) {
     val context = LocalContext.current
 
@@ -245,8 +246,14 @@ fun NetworkImage(
 
     var layoutOffset by remember { mutableStateOf(Offset.Zero) }
 
+    val effectiveThumbnailUri = thumbnailUri?.takeIf { it != imageUri }
+
     val request = ComposableImageRequest(imageUri) {
+        if (effectiveThumbnailUri == null) {
+            placeholder(ThumbnailMemoryCacheStateImage(imageUri))
+        }
         error(DrawableStateImage(RealDrawableFetcher(ImageUtil.getPlaceHolder(context, 0))))
+        crossfade(fadeStart = false)
         if (!shouldLoad) {
             depth(Depth.LOCAL)
         }
@@ -307,16 +314,27 @@ fun NetworkImage(
             }
             .then(modifier)
     ) {
+        val imageModifier = if (enablePreview) {
+            Modifier
+                .fillMaxSize()
+                .onSizeChanged { layoutSize = it }
+                .onGloballyPositioned { layoutOffset = it.positionInWindow() }
+        } else {
+            Modifier.fillMaxSize()
+        }
+
+        if (effectiveThumbnailUri != null) {
+            AsyncImage(
+                uri = effectiveThumbnailUri,
+                contentDescription = null,
+                modifier = imageModifier,
+                contentScale = contentScale,
+            )
+        }
+
         AsyncImage(
             request = request,
-            modifier = Modifier
-                .fillMaxSize()
-                .onSizeChanged {
-                    layoutSize = it
-                }
-                .onGloballyPositioned {
-                    layoutOffset = it.positionInWindow()
-                },
+            modifier = imageModifier,
             contentDescription = contentDescription,
             contentScale = contentScale,
             state = state,

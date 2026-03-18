@@ -18,12 +18,11 @@ fun getPhotoViewData(
     showOriginBtn: Boolean,
     originSize: Int,
     seeLz: Boolean = false
-): PhotoViewData? {
-    if (post.from_forum == null) return null
+): PhotoViewData {
     return PhotoViewData(
         data = LoadPicPageData(
-            forumId = post.from_forum.id,
-            forumName = post.from_forum.name,
+            forumId = post.from_forum?.id ?: 0,
+            forumName = post.from_forum?.name ?: "",
             threadId = post.tid,
             postId = post.id,
             objType = "pb",

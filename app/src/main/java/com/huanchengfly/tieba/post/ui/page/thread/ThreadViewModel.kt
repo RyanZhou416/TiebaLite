@@ -35,6 +35,7 @@ import com.huanchengfly.tieba.post.arch.wrapImmutable
 import com.huanchengfly.tieba.post.removeAt
 import android.util.Log
 import com.huanchengfly.tieba.post.repository.EmptyDataException
+import com.huanchengfly.tieba.post.utils.PerformanceTracker
 import com.huanchengfly.tieba.post.repository.PbPageRepository
 import com.huanchengfly.tieba.post.repository.ThreadDetailPrefetchManager
 import com.huanchengfly.tieba.post.ui.common.PbContentRender
@@ -161,6 +162,7 @@ class ThreadViewModel @Inject constructor() :
 
         fun ThreadUiIntent.Load.producePartialChange(): Flow<ThreadPartialChange.Load> {
             val isInitialLoad = page == 0 && postId == 0L && from.isEmpty()
+            val loadStartTime = System.currentTimeMillis()
             val cached = if (isInitialLoad) {
                 ThreadDetailPrefetchManager.get(threadId)
             } else null
@@ -181,6 +183,10 @@ class ThreadViewModel @Inject constructor() :
                         || response.data_.forum == null
                         || response.data_.anti == null
                     ) throw TiebaUnknownException
+                    PerformanceTracker.recordPageLoad(
+                        "Thread#$threadId(p=$page${if (cached != null) ",prefetch" else ""})",
+                        System.currentTimeMillis() - loadStartTime
+                    )
                     val postList = response.data_.post_list
                     val firstPost = response.data_.first_floor_post
                     val notFirstPosts = postList.filterNot { it.floor == 1 }

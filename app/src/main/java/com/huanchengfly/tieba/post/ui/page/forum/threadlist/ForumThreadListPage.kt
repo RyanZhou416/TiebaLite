@@ -68,6 +68,7 @@ import com.huanchengfly.tieba.post.ui.widgets.compose.LoadMoreLayout
 import com.huanchengfly.tieba.post.ui.widgets.compose.LocalSnackbarHostState
 import com.huanchengfly.tieba.post.ui.widgets.compose.MyLazyColumn
 import com.huanchengfly.tieba.post.ui.widgets.compose.VerticalDivider
+import com.huanchengfly.tieba.post.repository.AdaptivePrefetchManager
 import com.huanchengfly.tieba.post.repository.ThreadDetailPrefetchManager
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -338,8 +339,9 @@ fun ForumThreadListPage(
         }.collect { lastVisibleIndex ->
             if (!context.appPreferences.enableThreadPrefetch) return@collect
             if (lastVisibleIndex < 0 || threadList.isEmpty()) return@collect
+            val ahead = AdaptivePrefetchManager.prefetchAhead
             val prefetchRange = (lastVisibleIndex + 1).coerceAtMost(threadList.size)
-                .until((lastVisibleIndex + 6).coerceAtMost(threadList.size))
+                .until((lastVisibleIndex + 1 + ahead).coerceAtMost(threadList.size))
             for (i in prefetchRange) {
                 val item = threadList[i]
                 ThreadDetailPrefetchManager.prefetch(
@@ -405,6 +407,7 @@ fun ForumThreadListPage(
                 loadEnd = !hasMore,
                 lazyListState = lazyListState,
                 isEmpty = threadList.isEmpty(),
+                preloadCount = AdaptivePrefetchManager.preloadCount,
                 modifier = Modifier.weight(1f)
             ) {
                 ThreadList(

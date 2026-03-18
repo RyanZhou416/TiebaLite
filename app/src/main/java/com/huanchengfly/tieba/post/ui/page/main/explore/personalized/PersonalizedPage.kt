@@ -76,6 +76,7 @@ import com.huanchengfly.tieba.post.ui.widgets.compose.LoadMoreLayout
 import com.huanchengfly.tieba.post.ui.widgets.compose.MyLazyColumn
 import com.huanchengfly.tieba.post.ui.widgets.compose.VerticalDivider
 import com.huanchengfly.tieba.post.ui.widgets.compose.states.StateScreen
+import com.huanchengfly.tieba.post.repository.AdaptivePrefetchManager
 import com.huanchengfly.tieba.post.repository.ThreadDetailPrefetchManager
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -135,8 +136,9 @@ fun PersonalizedPage(
         }.collect { lastVisibleIndex ->
             if (!context.appPreferences.enableThreadPrefetch) return@collect
             if (lastVisibleIndex < 0 || data.isEmpty()) return@collect
+            val ahead = AdaptivePrefetchManager.prefetchAhead
             val prefetchRange = (lastVisibleIndex + 1).coerceAtMost(data.size)
-                .until((lastVisibleIndex + 6).coerceAtMost(data.size))
+                .until((lastVisibleIndex + 1 + ahead).coerceAtMost(data.size))
             for (i in prefetchRange) {
                 val item = data[i]
                 ThreadDetailPrefetchManager.prefetch(
@@ -216,7 +218,8 @@ fun PersonalizedPage(
                 onLoadMore = { viewModel.send(PersonalizedUiIntent.LoadMore(currentPage + 1)) },
                 loadEnd = false,
                 lazyListState = lazyListState,
-                isEmpty = data.isEmpty()
+                isEmpty = data.isEmpty(),
+                preloadCount = AdaptivePrefetchManager.preloadCount
             ) {
                 FeedList(
                     state = lazyListState,
@@ -331,7 +334,7 @@ private fun FeedList(
     ) {
         itemsIndexed(
             items = data,
-            key = { _, (item) -> "${item.get { id }}" },
+            key = { _, (item) -> item.get { id } },
             contentType = { _, (item) ->
                 when {
                     item.get { videoInfo } != null -> "Video"
@@ -341,20 +344,10 @@ private fun FeedList(
                 }
             }
         ) { index, (item, blocked, personalized, hidden) ->
-            val isHidden =
-                remember(
-                    hiddenThreadIds,
-                    item,
-                    hidden
-                ) { hiddenThreadIds.contains(item.get { threadId }) || hidden }
-            val isRefreshPosition =
-                remember(index, refreshPosition) { index + 1 == refreshPosition }
-            val isNotLast = remember(index, data.size) { index < data.size - 1 }
-            val showDivider = remember(
-                isHidden,
-                isRefreshPosition,
-                isNotLast
-            ) { !isHidden && !isRefreshPosition && isNotLast }
+            val threadId = item.get { threadId }
+            val isHidden = hiddenThreadIds.contains(threadId) || hidden
+            val isRefreshPosition = index + 1 == refreshPosition
+            val showDivider = !isHidden && !isRefreshPosition && index < data.size - 1
             Container {
                 AnimatedVisibility(
                     visible = !isHidden,

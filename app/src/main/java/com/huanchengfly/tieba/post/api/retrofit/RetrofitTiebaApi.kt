@@ -19,6 +19,7 @@ import com.huanchengfly.tieba.post.api.retrofit.interceptors.CommonHeaderInterce
 import com.huanchengfly.tieba.post.api.retrofit.interceptors.CommonParamInterceptor
 import com.huanchengfly.tieba.post.api.retrofit.interceptors.ConnectivityInterceptor
 import com.huanchengfly.tieba.post.api.retrofit.interceptors.CookieInterceptor
+import com.huanchengfly.tieba.post.api.retrofit.interceptors.LatencyTrackingInterceptor
 import com.huanchengfly.tieba.post.api.retrofit.interceptors.DropInterceptor
 import com.huanchengfly.tieba.post.api.retrofit.interceptors.FailureResponseInterceptor
 import com.huanchengfly.tieba.post.api.retrofit.interceptors.ForceLoginInterceptor
@@ -44,12 +45,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import okhttp3.Cache
 import okhttp3.ConnectionPool
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import retrofit2.Retrofit
 import retrofit2.converter.wire.WireConverterFactory
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -68,6 +71,12 @@ object RetrofitTiebaApi {
     private val connectionPool = ConnectionPool(32, 10, TimeUnit.MINUTES)
     private val cachingDns = CachingDns()
     private val settingsProxySelector = SettingsProxySelector()
+    private val httpCache by lazy {
+        Cache(
+            File(App.INSTANCE.cacheDir, "http_cache"),
+            50L * 1024 * 1024
+        )
+    }
 
     private val defaultCommonParamInterceptor = CommonParamInterceptor(
         Param.BDUSS to { AccountUtil.getBduss() },
@@ -377,6 +386,7 @@ object RetrofitTiebaApi {
         .addConverterFactory(json.asConverterFactory())
         .addConverterFactory(gsonConverterFactory)
         .client(OkHttpClient.Builder().apply {
+            cache(httpCache)
             readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
             connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
             writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
@@ -390,6 +400,7 @@ object RetrofitTiebaApi {
             addInterceptor(ForceLoginInterceptor)
             addInterceptor(sortAndSignInterceptor)
             addInterceptor(ConnectivityInterceptor)
+            addNetworkInterceptor(LatencyTrackingInterceptor)
             connectionPool(connectionPool)
         }.build())
         .build()
@@ -405,6 +416,7 @@ object RetrofitTiebaApi {
         .addConverterFactory(NullOnEmptyConverterFactory())
         .addConverterFactory(WireConverterFactory.create())
         .client(OkHttpClient.Builder().apply {
+            cache(httpCache)
             readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
             connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
             writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
@@ -419,6 +431,7 @@ object RetrofitTiebaApi {
             addInterceptor(CookieInterceptor)
             addInterceptor(sortAndSignInterceptor)
             addInterceptor(ConnectivityInterceptor)
+            addNetworkInterceptor(LatencyTrackingInterceptor)
             connectionPool(connectionPool)
         }.build())
         .build()
