@@ -30,7 +30,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -68,8 +71,11 @@ private fun ViewPhoto(
         contentAlignment = Alignment.Center
     ) {
         val state = rememberAsyncImageState()
-        val loaded by remember {
-            derivedStateOf { state.loadState is LoadState.Success }
+        var loaded by remember { mutableStateOf(false) }
+        LaunchedEffect(state.loadState) {
+            if (state.loadState is LoadState.Success) {
+                loaded = true
+            }
         }
         val progress by remember {
             derivedStateOf {
@@ -83,9 +89,18 @@ private fun ViewPhoto(
             }
         }
 
-        if (!loaded && thumbnailUri != null && thumbnailUri != imageUri) {
+        val hasThumbnail = thumbnailUri != null && thumbnailUri != imageUri
+        var showThumbnail by remember { mutableStateOf(false) }
+        LaunchedEffect(hasThumbnail) {
+            if (hasThumbnail) {
+                delay(150)
+                showThumbnail = true
+            }
+        }
+
+        if (!loaded && showThumbnail) {
             com.github.panpf.sketch.AsyncImage(
-                uri = thumbnailUri,
+                uri = thumbnailUri!!,
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = androidx.compose.ui.layout.ContentScale.Fit,

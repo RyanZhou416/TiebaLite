@@ -40,9 +40,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.constraintlayout.compose.ConstraintLayout
-import androidx.constraintlayout.compose.Dimension
-import androidx.constraintlayout.compose.Visibility
 import com.huanchengfly.tieba.post.R
 import com.huanchengfly.tieba.post.arch.BaseComposeActivity.Companion.LocalWindowSizeClass
 import com.huanchengfly.tieba.post.ui.common.theme.compose.ExtendedTheme
@@ -391,10 +388,8 @@ fun Dialog(
         cancelable = cancelable,
         cancelableOnTouchOutside = cancelableOnTouchOutside,
     ) {
-        ConstraintLayout(
+        Column(
             modifier = modifier
-                .wrapContentHeight()
-                .animateContentSize()
                 .fillMaxWidth(
                     fraction = if (windowWidthSizeClass == WindowWidthSizeClass.Compact) {
                         1f
@@ -409,54 +404,22 @@ fun Dialog(
                 )
                 .padding(vertical = 24.dp),
         ) {
-            val (titleRef, contentRef, buttonsRef) = createRefs()
-            Column(
-                modifier = Modifier
-                    .constrainAs(titleRef) {
-                        top.linkTo(parent.top)
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
-                        width = Dimension.fillToConstraints
-                        visibility = if (title == null) {
-                            Visibility.Gone
-                        } else {
-                            Visibility.Visible
-                        }
-                    }
-            ) {
-                if (title != null) {
-                    Box(
-                        modifier = Modifier
-                            .padding(horizontal = 24.dp)
-                            .align(Alignment.CenterHorizontally)
-                    ) {
-                        ProvideTextStyle(value = MaterialTheme.typography.h6.copy(fontWeight = FontWeight.Bold)) {
-                            title()
-                        }
+            if (title != null) {
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 24.dp)
+                        .align(Alignment.CenterHorizontally)
+                ) {
+                    ProvideTextStyle(value = MaterialTheme.typography.h6.copy(fontWeight = FontWeight.Bold)) {
+                        title()
                     }
                 }
+                Spacer(modifier = Modifier.height(16.dp))
             }
+            content()
+            Spacer(modifier = Modifier.height(16.dp))
             Column(
-                modifier = Modifier
-                    .constrainAs(contentRef) {
-                        top.linkTo(titleRef.bottom, margin = 16.dp, goneMargin = 0.dp)
-                        bottom.linkTo(buttonsRef.top, margin = 16.dp, goneMargin = 0.dp)
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
-                        height = Dimension.preferredWrapContent
-                    }
-            ) {
-                content()
-            }
-            Column(
-                modifier = Modifier
-                    .constrainAs(buttonsRef) {
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
-                        bottom.linkTo(parent.bottom)
-                        width = Dimension.fillToConstraints
-                    }
-                    .padding(horizontal = 24.dp),
+                modifier = Modifier.padding(horizontal = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 buttons()

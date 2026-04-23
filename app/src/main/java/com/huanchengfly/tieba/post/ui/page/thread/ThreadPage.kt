@@ -71,7 +71,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -650,8 +650,10 @@ fun ThreadPage(
         initialValue = ModalBottomSheetValue.Hidden,
         skipHalfExpanded = true
     )
-    val postById = remember(data) {
-        data.associateBy { it.post.get { id } }
+    val postById by remember {
+        derivedStateOf {
+            data.associateBy { it.post.get { id } }
+        }
     }
     val lastVisibilityPost by remember {
         derivedStateOf {
@@ -748,47 +750,24 @@ fun ThreadPage(
         )
     }
 
-    val updateCollectMarkDialogState = rememberDialogState()
-    var readFloorBeforeBack by remember {
-        mutableIntStateOf(1)
-    }
-    ConfirmDialog(
-        dialogState = updateCollectMarkDialogState,
-        onConfirm = {
-            coroutineScope.launch {
-                navigator.navigateUp()
-                if (lastVisibilityPostId != 0L) {
+    val updateCollectMarkAndNavigateUp: () -> Unit = remember(isCollected, threadId) {
+        {
+            navigator.navigateUp()
+            if (isCollected && lastVisibilityPostId != 0L) {
+                coroutineScope.launch {
                     TiebaApi.getInstance()
                         .addStoreFlow(threadId, lastVisibilityPostId)
-                        .catch {
-                            context.toastShort(
-                                R.string.message_update_collect_mark_failed,
-                                it.getErrorMessage()
-                            )
-                        }
-                        .collect {
-                            context.toastShort(R.string.message_update_collect_mark_success)
-                        }
+                        .catch { }
+                        .collect { }
                 }
             }
-        },
-        onCancel = {
-            navigator.navigateUp()
         }
-    ) {
-        Text(text = stringResource(R.string.message_update_collect_mark, readFloorBeforeBack))
     }
     MyBackHandler(
         enabled = isCollected && !bottomSheetState.isVisible,
-        currentScreen = ThreadPageDestination
-    ) {
-        readFloorBeforeBack = lastVisibilityPost?.get { floor } ?: 0
-        if (readFloorBeforeBack != 0) {
-            updateCollectMarkDialogState.show()
-        } else {
-            navigator.navigateUp()
-        }
-    }
+        currentScreen = ThreadPageDestination,
+        onBack = updateCollectMarkAndNavigateUp
+    )
 
     val confirmDeleteDialogState = rememberDialogState()
     var deletePost by remember { mutableStateOf<ImmutableHolder<Post>?>(null) }
@@ -1151,7 +1130,7 @@ fun ThreadPage(
                 topBar = {
                     TopBar(
                         forum = forum,
-                        onBack = { navigator.navigateUp() },
+                        onBack = updateCollectMarkAndNavigateUp,
                         onForumClick = {
                             val forumName = forum?.get { name }
                             if (forumName != null) navigator.navigate(
