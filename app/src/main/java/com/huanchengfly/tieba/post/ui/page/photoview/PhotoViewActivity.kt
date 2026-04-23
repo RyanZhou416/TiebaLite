@@ -68,6 +68,9 @@ private fun ViewPhoto(
         contentAlignment = Alignment.Center
     ) {
         val state = rememberAsyncImageState()
+        val loaded by remember {
+            derivedStateOf { state.loadState is LoadState.Success }
+        }
         val progress by remember {
             derivedStateOf {
                 (state.progress?.completedLength?.toFloat() ?: 0f) / (state.progress?.totalLength
@@ -80,7 +83,7 @@ private fun ViewPhoto(
             }
         }
 
-        if (thumbnailUri != null && thumbnailUri != imageUri) {
+        if (!loaded && thumbnailUri != null && thumbnailUri != imageUri) {
             com.github.panpf.sketch.AsyncImage(
                 uri = thumbnailUri,
                 contentDescription = null,

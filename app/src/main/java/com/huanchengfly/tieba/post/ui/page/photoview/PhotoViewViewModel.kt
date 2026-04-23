@@ -200,15 +200,32 @@ sealed interface PhotoViewPartialChange : PartialChange<PhotoViewUiState> {
     sealed class Init : PhotoViewPartialChange {
         override fun reduce(oldState: PhotoViewUiState): PhotoViewUiState =
             when (this) {
-                is Success -> oldState.copy(
-                    data = items.toImmutableList(),
-                    hasNext = hasNext,
-                    hasPrev = hasPrev,
-                    totalAmount = totalAmount,
-                    initialIndex = initialIndex,
-                    loadPicPageData = loadPicPageData,
-                    isLoading = false
-                )
+                is Success -> {
+                    val mergedItems = if (oldState.data.isEmpty()) {
+                        items
+                    } else {
+                        items.map { newItem ->
+                            val existing = oldState.data.firstOrNull { it.picId == newItem.picId }
+                            if (existing != null) {
+                                newItem.copy(
+                                    originUrl = existing.originUrl,
+                                    url = existing.url ?: newItem.url
+                                )
+                            } else {
+                                newItem
+                            }
+                        }
+                    }
+                    oldState.copy(
+                        data = mergedItems.toImmutableList(),
+                        hasNext = hasNext,
+                        hasPrev = hasPrev,
+                        totalAmount = totalAmount,
+                        initialIndex = initialIndex,
+                        loadPicPageData = loadPicPageData,
+                        isLoading = false
+                    )
+                }
 
                 is Failure -> {
                     oldState.copy(
